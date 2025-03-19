@@ -1,0 +1,4 @@
+# copy this yaml to your private config_config.yaml
+notion_config:
+  database_id: "c1a348********************4c7"    # 数据库ID
+  token: "ntn_41*******************Lq" # token

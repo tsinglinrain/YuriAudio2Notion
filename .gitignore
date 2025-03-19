@@ -172,3 +172,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# custom
+/data
+*_private.yaml
+waiting_up_private.txt
