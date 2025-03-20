@@ -5,6 +5,7 @@ import os
 import logging
 from notion_client_cus import NotionClient
 from fanjiao_client import FanjiaoAPI, FanjiaoCVAPI
+import re
 
 from typing import List, Dict, Any
 
@@ -43,6 +44,8 @@ def format_list_data(key, data: List[Dict]) -> List:
         )
     return formatted_data
 
+
+
 def description_split(description: str) -> list[str, str]:
     """将描述分割成段落"""
     # 找到“出品”的位置
@@ -59,6 +62,51 @@ def description_split(description: str) -> list[str, str]:
     part1 = description[ :split_index-1]
     part2 = description[split_index+1: ]
     return [part1, part2]
+
+def description_upname(description: str) -> str:
+    """up_name提取, 不准确, 需要人工审核"""
+    # 优先匹配"制作出品"或"出品制作"前的最后一个逗号分割的内容
+    combined_match = re.search(r'，([^，]+?)(?=制作出品|出品制作)', description)
+    if combined_match:
+        return combined_match.group(1).strip()
+    
+    # 检查是否存在"制作"
+    produce_match = re.search(r'，([^，]+?)(?=制作)', description)
+    if produce_match:
+        up_name_temp = produce_match.group(1).strip()
+        # 如果存在多个名称，以逗号或顿号分隔，取第一个
+        if '、' in up_name_temp:
+            return up_name_temp.split('、')[0].strip()
+        return up_name_temp
+    
+    # 检查是否存在"出品"
+    publish_match = re.search(r'，([^，]+?)(?=出品)', description)
+    if publish_match:
+        up_name_temp = publish_match.group(1).strip()
+        if '、' in up_name_temp:
+            return up_name_temp.split('、')[0].strip()
+        return up_name_temp
+    
+    # 无匹配情况
+    return ""
+
+def description_tag(description: str) -> str:
+    '''提取tag'''
+    tag_list = []
+    audio_drama_match = re.search(r'，([^，]+?)(?=广播剧《)', description)
+    if audio_drama_match:
+        tags = audio_drama_match.group(1).strip()
+        if "全一季" in tags:
+            # tag_list.append("全一季") # 纠结了一下, 还是给注释掉了, 更想强调题材风格
+            tags = tags.replace("全一季", "")
+            if len(tags) % 2 == 0:
+                tag_list.extend([tags[i:i+2] for i in range(0, len(tags), 2)])
+            else:
+                tag_list.append(tags)
+        print()
+        return tag_list
+    
+    return ""
 
 def notion_para_get():
     with open("config_private.yaml", "r", encoding="utf-8") as file:

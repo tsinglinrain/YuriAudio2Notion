@@ -1,6 +1,9 @@
 import requests
 from notion_client import Client
 import yaml
+import re
+
+from typing import Dict, List, Any
 
 class NotionClient:
     def __init__(self, database_id, token, payment_platform):
@@ -38,6 +41,9 @@ class NotionClient:
             update_frequency, 
             ori_price, 
             author_name,
+            up_name,
+            tags,
+            source,
             main_cv,
             main_cv_role,
             supporting_cv,
@@ -60,6 +66,9 @@ class NotionClient:
             "更新": {"select": {"name": update_frequency}},
             "Price": {"number": ori_price},
             "原著": {"select": {"name": author_name}},
+            "up主": {"select": {"name": up_name}},
+            "Tags": {"multi_select": tags},
+            "来源": {"select": {"name": source}},
             "cv主役":{"multi_select": main_cv},
             "饰演角色": {"multi_select": main_cv_role},
             "cv协役": {"multi_select": supporting_cv},
@@ -85,7 +94,71 @@ def description_split(description: str) -> list[str, str]:
     part1 = description[ :split_index-1]
     part2 = description[split_index+1: ]
     return [part1, part2]
+
+def description_upname(description: str) -> str:
+    """up_name提取, 不准确, 需要人工审核"""
+    # 优先匹配"制作出品"或"出品制作"前的最后一个逗号分割的内容
+    combined_match = re.search(r'，([^，]+?)(?=制作出品|出品制作)', description)
+    if combined_match:
+        return combined_match.group(1).strip()
     
+    # 检查是否存在"制作"
+    produce_match = re.search(r'，([^，]+?)(?=制作)', description)
+    if produce_match:
+        up_name_temp = produce_match.group(1).strip()
+        # 如果存在多个名称，以逗号或顿号分隔，取第一个
+        if '、' in up_name_temp:
+            return up_name_temp.split('、')[0].strip()
+        return up_name_temp
+    
+    # 检查是否存在"出品"
+    publish_match = re.search(r'，([^，]+?)(?=出品)', description)
+    if publish_match:
+        up_name_temp = publish_match.group(1).strip()
+        if '、' in up_name_temp:
+            return up_name_temp.split('、')[0].strip()
+        return up_name_temp
+    
+    # 无匹配情况
+    return ""
+
+def description_tag(description: str) -> list:
+    '''广播剧'''
+    match = re.search(r'，([^，]+?)广播剧《', description)
+    if not match:
+        return []
+    
+    tags_str = match.group(1).strip()
+    tags_str = tags_str.replace('百合', '')   # 只爱百广, 剔除固有标签
+    tag_list = []
+    
+    # 处理“全一季”标签
+    if '全一季' in tags_str:
+        # tag_list.append('全一季')   # 纠结了一下, 还是给注释掉了, 更像强调题材风格
+        tags_str = tags_str.replace('全一季', '')
+    
+    # 分割剩余内容为标签
+    if tags_str:
+        chunk_size = 2
+        # 根据长度决定是否分割为两字标签
+        if len(tags_str) % chunk_size == 0:
+            remaining_tags = [tags_str[i:i+chunk_size] for i in range(0, len(tags_str), chunk_size)]
+        else:
+            remaining_tags = [tags_str]
+        tag_list.extend(remaining_tags)
+    
+    return tag_list
+
+def format_tag_list(data: List) -> List:
+    """将tags list formated"""
+    formatted_data = []
+    for item in data:
+        formatted_data.append(
+            {
+                "name": item,
+            }
+        )
+    return formatted_data   
 
 def main():
     """示例使用"""
@@ -99,6 +172,17 @@ def main():
     update_frequency = "已完结"
     ori_price = 218
     author_name = "闻人碎语"
+    
+    up_name = description_upname(description_sequel)
+    
+    tags = description_tag(description_sequel)
+    # print(tags)
+    tags = format_tag_list(tags)
+    # print(tags)
+    
+    source = "改编" if "原著" in description_sequel else "原创" # 需要人工审阅
+    print(source)
+
     main_cv = [{'name': '纸巾'}, {'name': '清鸢'}]
     main_cv_role = [{'name': '曲红绡'}, {'name': '卫璃攸'}]
     supporting_cv = []
@@ -119,6 +203,9 @@ def main():
         update_frequency, 
         ori_price, 
         author_name,
+        up_name,
+        tags,
+        source,
         main_cv,
         main_cv_role,
         supporting_cv,

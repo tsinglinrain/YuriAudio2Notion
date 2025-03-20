@@ -177,3 +177,5 @@ cython_debug/
 /data
 *_private.yaml
 waiting_up_private.txt
+/Backup
+/Test

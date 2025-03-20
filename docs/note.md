@@ -49,7 +49,29 @@ Price
 
 Tag其实也可从简介部分分析, 如纯爱, 古风等.
 
+对于诸如"全一季现代纯爱广播剧《有趣》""全一季科幻悬疑百合广播剧《离开与你相遇的世界》""现代纯爱广播剧《帮我拍拍》第一季"等字符串，想要提取每一个的tag，如'全一季""现代""纯爱".需要注意的是，每个字符串"广播剧《"前面内容都是未知的,如何提取呢？
+
+中文分词太重,不合适
+直接取吧.
+
 up主也可从简介中提取
+
+如果 description中存在"制作出品"或者"出品制作"
+    则 up_name = ，(.*?)制作出品
+否则:
+    如果 description中存在"制作"
+        则 up_name_temp = ,(.*?)制作
+        如果 up_name_temp中存在"、"
+            则 up_name = ^(.*?)、
+        则 up_name = up_name_temp
+    elif description中存在"出品",
+        则 up_name_temp = ,(.*?)制作
+        如果 up_name_temp中存在"、"
+            则 up_name = ^(.*?)、
+        则 up_name = up_name_temp
+    else:
+        则 up_name = ""
+
 
 # icon获取方法
 
