@@ -3,9 +3,11 @@ from datetime import datetime
 import yaml
 import os
 import logging
+import re
 from notion_client_cus import NotionClient
 from fanjiao_client import FanjiaoAPI, FanjiaoCVAPI
-import re
+from descrip_process import DescriptionProcessor
+
 
 from typing import List, Dict, Any
 
@@ -120,7 +122,18 @@ def upload_data(data_ready: Dict):
     """使用"""
     name = data_ready.get("name", "")
     description = data_ready.get("description", "")
-    description, description_sequel = description_split(description)
+    
+    property_cus = DescriptionProcessor()
+    property_cus.description_get(description)
+    property_cus.parse_property()
+
+    description = property_cus.description
+    description_sequel = property_cus.description_sequel
+    up_name = property_cus.upname
+    tags = property_cus.tag_list
+    tags = property_cus.format_tag_list(tags)
+
+    source = "改编" if "原著" in description_sequel else "原创" # 需要人工审阅
 
     publish_date: str = data_ready.get("publish_date", "")
     publish_date = publish_date.replace("+08:00", "Z") # publish_date = "2024-12-01T14:25:56+08:00" -> "2020-12-08T12:00:00Z”
@@ -147,11 +160,14 @@ def upload_data(data_ready: Dict):
     notion_client.cre_in_database_paper(
         name, 
         description,
-        description_sequel,
+        description_sequel, 
         publish_date, 
         update_frequency, 
         ori_price, 
         author_name,
+        up_name,
+        tags,
+        source,
         main_cv,
         main_cv_role,
         supporting_cv,
