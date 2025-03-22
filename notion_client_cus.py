@@ -49,6 +49,7 @@ class NotionClient:
             supporting_cv,
             supporting_cv_role,
             commercial_drama,
+            episode_count,
             platform="饭角",
             time_zone="Asia/Shanghai"
         ):
@@ -74,6 +75,7 @@ class NotionClient:
             "cv协役": {"multi_select": supporting_cv},
             "协役饰演角色": {"multi_select": supporting_cv_role},
             "商剧": {"select": {"name": commercial_drama}},
+            "Episode Count": {"number": episode_count},
             "Platform": {"multi_select": [{"name": platform}]},
         }
         self.create_page(properties)
@@ -111,8 +113,11 @@ def main():
     supporting_cv = []
     supporting_cv_role = []
     commercial_drama = "商剧" if ori_price > 0 else "非商"
+    episode_count = property_cus.episode_count
+    print(episode_count)
     with open("config_private.yaml", "r", encoding="utf-8") as file:
         config = yaml.safe_load(file)
+
 
     notion_config = config.get("notion_config", {})
     database_id, token = (i for i in notion_config.values())
@@ -133,7 +138,8 @@ def main():
         main_cv_role,
         supporting_cv,
         supporting_cv_role,
-        commercial_drama
+        commercial_drama,
+        episode_count
     )
 
 if __name__ == "__main__":

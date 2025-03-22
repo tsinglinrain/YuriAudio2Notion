@@ -12,6 +12,7 @@ class DescriptionProcessor():
         self.description_sequel: str = None
         self.upname: str = None
         self.tag_list: List = None
+        self.episode_count: int = None
 
     def description_get(self, description_ori: str):
         '''更改或获取description_ori'''
@@ -22,9 +23,12 @@ class DescriptionProcessor():
         self.description, self.description_sequel = self.description_split()
         self.upname: str = self.description_upname()
         self.tag_list: List = self.description_tag()
+        self.episode_count: int = self.desc_ep_count()
 
     def description_split(self) -> Tuple[str, str]:
-        """将描述分割成段落"""
+        """将描述分割成段落
+        
+        需要人工审查"""
         # 找到"出品"的位置
         start = self.description_ori.find("出品")
         if start == -1:
@@ -47,7 +51,10 @@ class DescriptionProcessor():
         combined_match = re.search(r'，([^，]+?)(?=制作出品|出品制作)', self.description_sequel)
         if combined_match:
             return combined_match.group(1).strip()
-        
+        else:
+            combined_match_1 = re.search(r'^(.+?)(?=制作出品|出品制作)', self.description_sequel)
+            if combined_match_1:
+                return combined_match_1.group(1).strip()
         # 检查是否存在"制作"
         produce_match = re.search(r'，([^，]+?)(?=制作)', self.description_sequel)
         if produce_match:
@@ -97,7 +104,9 @@ class DescriptionProcessor():
     
 
     def desc_ep_count(self) -> int:
-        '''description_episode_count'''
+        '''description_episode_count
+        
+        需要人工审查'''
         
         
         # 正则表达式匹配正剧后的集数信息
@@ -143,7 +152,7 @@ class DescriptionProcessor():
 
 
 def main():
-    description = "琴声起，不知情始。\n弦音落，难解情痴。\n\n中州皇族势微，天下被五大藩王割据，混战间风雨飘摇。而五藩之中，属崟王势力最盛。\n\n女伶曲红绡初入崟王府，眼看着就要摇身变为世子侍妾，却被冠以狐媚惑主之名，险些被逐出王府。幸好得郡主卫璃攸收留，才勉强有了容身之所，殊不知看似病弱无害的郡主，才是真正的狐狸。\n\n[奴婢可有选择的余地？]\n[你自然是——没得选。]\n\n利用，权衡，挣扎，沉沦......血雨腥风，暗流涌动；身世浮沉，命难由己。\n\n长佩文学，闻人碎语原著，仟金不换工作室出品，古风百合广播剧《落音记》第一季。本剧共两季，第一季正剧共更广告，每期时长均在30分钟以上，定期掉落花絮，不定期掉落小剧场、福利，12月16日起每周一中午十二点更新，欢迎收听。\n\n追剧日历：\n12月6日：主题曲\n12月9日：预告\n12月12日：主役前采\n12月14日：楔子 曲红绡篇\n12月15日：楔子 卫璃攸篇\n12月16日：第一期\n\n禁止盗版、篡改、用于其他商业用途等行为，违者必追究法律责任。"
+    description = "琴声起，不知情始。\n弦音落，难解情痴。\n\n中州皇族势微，天下被五大藩王割据，混战间风雨飘摇。而五藩之中，属崟王势力最盛。\n\n女伶曲红绡初入崟王府，眼看着就要摇身变为世子侍妾，却被冠以狐媚惑主之名，险些被逐出王府。幸好得郡主卫璃攸收留，才勉强有了容身之所，殊不知看似病弱无害的郡主，才是真正的狐狸。\n\n[奴婢可有选择的余地？]\n[你自然是——没得选。]\n\n利用，权衡，挣扎，沉沦......血雨腥风，暗流涌动；身世浮沉，命难由己。\n\n长佩文学，闻人碎语原著，仟金不换工作室制作出品，古风百合广播剧《落音记》第一季。本剧共两季，第一季正剧共10，每期时长均在30分钟以上，定期掉落花絮，不定期掉落小剧场、福利，12月16日起每周一中午十二点更新，欢迎收听。\n\n追剧日历：\n12月6日：主题曲\n12月9日：预告\n12月12日：主役前采\n12月14日：楔子 曲红绡篇\n12月15日：楔子 卫璃攸篇\n12月16日：第一期\n\n禁止盗版、篡改、用于其他商业用途等行为，违者必追究法律责任。"
     property_cus = DescriptionProcessor()
     property_cus.description_get(description)
     
@@ -152,11 +161,12 @@ def main():
     # print(property_cus.description)
     description = property_cus.description
     description_sequel = property_cus.description_sequel
-    up_name = property_cus.upname
+    up_name = property_cus.upname if property_cus.upname else "Undefined"
+    print(f"up_name: {up_name}")
     tags = property_cus.tag_list
     tags = property_cus.format_tag_list(tags)
 
-    episode_count = property_cus.desc_ep_count()
+    episode_count = property_cus.episode_count
     print(episode_count)
     # for i in [description, description_sequel, up_name, tags]:
     #     print(i)

@@ -129,7 +129,9 @@ def upload_data(data_ready: Dict):
 
     description = property_cus.description
     description_sequel = property_cus.description_sequel
+    print(description_sequel)
     up_name = property_cus.upname
+    print(up_name)
     tags = property_cus.tag_list
     tags = property_cus.format_tag_list(tags)
 
@@ -154,6 +156,8 @@ def upload_data(data_ready: Dict):
     
     commercial_drama = "商剧" if ori_price > 0 else "非商"
     
+    episode_count = property_cus.episode_count
+
     database_id, token = notion_para_get()
 
     notion_client = NotionClient(database_id, token, "fanjiao")
@@ -172,7 +176,8 @@ def upload_data(data_ready: Dict):
         main_cv_role,
         supporting_cv,
         supporting_cv_role,
-        commercial_drama
+        commercial_drama,
+        episode_count
     )
 
 def main():
