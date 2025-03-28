@@ -1,6 +1,4 @@
-import requests
 from notion_client import Client
-import yaml
 import re
 
 from typing import Dict, List, Tuple, Any
