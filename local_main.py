@@ -14,7 +14,7 @@ from typing import List, Dict, Any
 def acquire_data(
         fanjiao_api: FanjiaoAPI, 
         fanjiao_cv_api: FanjiaoCVAPI, 
-        url: str) -> Dict[str, Any]:
+        url: List[str]) -> Dict[str, Any]:
     """acquire_data"""
 
     try:
@@ -116,32 +116,23 @@ def upload_data(data_ready: Dict):
         episode_count
     )
 
-def main():
+def process(url):
 
-    # 读取文件内容并生成URL列表
-    url_list = []
-    with open('waiting_up_private.txt', 'r', encoding="utf-8") as file:
-        for line in file:
-            # 去除首尾空白字符并添加到列表
-            cleaned_url = line.strip()
-            if cleaned_url:  # 确保非空行才添加到列表
-                url_list.append(cleaned_url)
-
-    # 验证结果（可选）
-    print(f"共读取到 {len(url_list)} 个URL：")
-    # for url in url_list:
-    #     print(url)
-
+    # # 传入一个url
     try:
         fanjiao_api = FanjiaoAPI()
         fanjiao_cv_api = FanjiaoCVAPI()
-        for url in url_list:
-            data_ready = acquire_data(fanjiao_api, fanjiao_cv_api, url)
-            if data_ready:
-                upload_data(data_ready)
-            else:
-                print(f"处理 {url}后, 内容为空")
+        data_ready = acquire_data(fanjiao_api, fanjiao_cv_api, url)
+        if data_ready:
+            upload_data(data_ready)
+        else:
+            print(f"处理 {url}后, 内容为空")
     except Exception as e:
         logging.error(f"处理 {url} 失败: {str(e)}")
+
+
+def main():
+    process()
+    
 if __name__ == "__main__":
     main()

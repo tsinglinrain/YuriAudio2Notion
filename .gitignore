@@ -179,3 +179,5 @@ cython_debug/
 waiting_up_private.txt
 /Backup
 /Test
+*_test*
+*_test/*
