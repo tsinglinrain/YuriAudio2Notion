@@ -1,0 +1,6 @@
+requests
+pyyaml
+pandas
+notion-client
+flask
+guinicorn
