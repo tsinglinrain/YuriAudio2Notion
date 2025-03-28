@@ -1,6 +1,5 @@
 requests
-pyyaml
-pandas
+python-dotenv
+PyYAML
 notion-client
 flask
-guinicorn
