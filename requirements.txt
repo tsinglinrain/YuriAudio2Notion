@@ -3,3 +3,4 @@ python-dotenv
 PyYAML
 notion-client
 flask
+gunicorn

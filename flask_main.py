@@ -8,7 +8,9 @@ from local_main import (
     DescriptionProcessor
 )
 
+
 app = Flask(__name__)
+
 
 # 初始化全局API客户端（线程安全考虑）
 fanjiao_api = FanjiaoAPI()
@@ -55,3 +57,4 @@ def webhook_handler():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+    # app.run(host='0.0.0.0', port=5000, debug=False)
