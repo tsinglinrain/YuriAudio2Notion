@@ -24,18 +24,10 @@ class FanjiaoSigner:
             
             # 生产环境强制校验
             if os.getenv("ENV") == "production" and not os.getenv("FANJIAO_SALT"):
-                raise RuntimeError("Missing FANJIAO_SALT in production environment")
-                
+                raise RuntimeError("Missing FANJIAO_SALT in production environment")     
+        
         return cls._SALT
-    @classmethod
-    def get_salt_yml(cls) -> str:
-        '''yaml方式读取'''
-        if not cls._SALT:
-            # 加载 .yaml 文件
-            with open("config_private.yaml", "r", encoding="utf-8") as file:
-                config = yaml.safe_load(file)
-            cls._SALT = config["fanjiao"]["FANJIAO_SALT"]
-        return cls._SALT
+    
     @classmethod
     def generate(cls, query_params: str) -> str:
         raw_str = f"{query_params}{cls.get_salt()}"
@@ -108,10 +100,7 @@ class FanjiaoAPI(BaseFanjiaoAPI):
     def get_base_url(cls) -> str:
         '''yaml方式读取'''
         if not cls._BASE_URL:
-            # 加载 .yaml 文件
-            with open("config_private.yaml", "r", encoding="utf-8") as file:
-                config = yaml.safe_load(file)
-            cls._BASE_URL = config["fanjiao"]["base_url"]
+            cls._BASE_URL = os.getenv("FANJIAO_BASE_URL")
         return cls._BASE_URL
 
     def __init__(self):
@@ -140,10 +129,7 @@ class FanjiaoCVAPI(BaseFanjiaoAPI):
     def get_base_url(cls) -> str:
         '''yaml方式读取'''
         if not cls._BASE_URL:
-            # 加载 .yaml 文件
-            with open("config_private.yaml", "r", encoding="utf-8") as file:
-                config = yaml.safe_load(file)
-            cls._BASE_URL = config["fanjiao"]["cv_base_url"]
+            cls._BASE_URL = os.getenv("FANJIAO_CV_BASE_URL")
         return cls._BASE_URL
 
     def __init__(self):
