@@ -2,12 +2,12 @@ name: Docker Build and Push
 
 on:
   push:
-    branches: [ "main" ]  # 只在main分支推送时触发
+    branches: [  "feat/add-flask", "main" ]  # 只在main分支推送时触发
     tags: [ "v*.*.*" ]    # 也支持语义化版本标签触发
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/your-repo-name  # 修改为你的镜像名
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/yuriaudio2notion  # 修改为你的镜像名
 
 jobs:
   build-and-push:
@@ -35,7 +35,9 @@ jobs:
             type=ref,event=branch
             type=ref,event=tag
             type=sha
-
+            # 为特性分支添加特殊标签
+            type=raw,value=latest-feat,enable=${{ github.ref == 'refs/heads/feat/add-flask' }}
+            
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
