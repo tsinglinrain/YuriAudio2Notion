@@ -32,8 +32,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          # tags: ${{ steps.meta.outputs.tags }}
+          # labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/my-flask-app:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/my-flask-app:buildcache,mode=max
