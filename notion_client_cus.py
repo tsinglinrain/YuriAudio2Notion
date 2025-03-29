@@ -1,9 +1,16 @@
 import requests
 from notion_client import Client
 import yaml
+from dotenv import load_dotenv
+import os
 import re
 from descrip_process import DescriptionProcessor
 from typing import Dict, List, Any
+
+
+# 仅本地开发时加载 .env 文件（Docker 环境会跳过）
+if os.getenv("ENV") != "production":
+    load_dotenv()  # 默认加载 .env 文件
 
 class NotionClient:
     def __init__(self, database_id, token, payment_platform):
@@ -115,12 +122,10 @@ def main():
     commercial_drama = "商剧" if ori_price > 0 else "非商"
     episode_count = property_cus.episode_count
     print(episode_count)
-    with open("config_private.yaml", "r", encoding="utf-8") as file:
-        config = yaml.safe_load(file)
+    
 
-
-    notion_config = config.get("notion_config", {})
-    database_id, token = (i for i in notion_config.values())
+    database_id = os.getenv("NOTION_DATABASE_ID")
+    token = os.getenv("NOTION_TOKEN")
 
     notion_client = NotionClient(database_id, token, "fanjiao")
     notion_client.cre_in_database_paper(

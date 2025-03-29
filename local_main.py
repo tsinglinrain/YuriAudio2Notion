@@ -4,9 +4,15 @@ import yaml
 import os
 import logging
 import re
+from dotenv import load_dotenv
+
 from notion_client_cus import NotionClient
 from fanjiao_client import FanjiaoAPI, FanjiaoCVAPI
 from descrip_process import DescriptionProcessor
+
+# 仅本地开发时加载 .env 文件（Docker 环境会跳过）
+if os.getenv("ENV") != "production":
+    load_dotenv()  # 默认加载 .env 文件
 
 
 from typing import List, Dict, Any
@@ -46,12 +52,18 @@ def format_list_data(key, data: List[Dict]) -> List:
         )
     return formatted_data
 
-def notion_para_get():
+def notion_para_get_yml():
     with open("config_private.yaml", "r", encoding="utf-8") as file:
         config = yaml.safe_load(file)
 
     notion_config = config.get("notion_config", {})
     database_id, token = (i for i in notion_config.values())
+    return database_id, token
+
+def notion_para_get():
+
+    database_id = os.getenv("NOTION_DATABASE_ID")
+    token = os.getenv("NOTION_TOKEN")
     return database_id, token
 
 def upload_data(data_ready: Dict):

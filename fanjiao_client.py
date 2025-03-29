@@ -8,12 +8,15 @@ import os
 import yaml
 import logging
 
+# 仅本地开发时加载 .env 文件（Docker 环境会跳过）
+if os.getenv("ENV") != "production":
+    load_dotenv()  # 默认加载 .env 文件
 
 class FanjiaoSigner:
     """签名生成器"""
     _SALT = None  # 延迟加载
     @classmethod
-    def get_salt_env(cls) -> str:
+    def get_salt(cls) -> str:
         """安全获取,优先从环境变量读取"""
         if not cls._SALT:
             # 从环境变量读取，不存在则使用开发默认值
@@ -25,7 +28,7 @@ class FanjiaoSigner:
                 
         return cls._SALT
     @classmethod
-    def get_salt(cls) -> str:
+    def get_salt_yml(cls) -> str:
         '''yaml方式读取'''
         if not cls._SALT:
             # 加载 .yaml 文件
