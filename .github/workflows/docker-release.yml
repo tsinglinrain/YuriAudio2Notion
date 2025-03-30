@@ -9,7 +9,6 @@ on:
 
 env:
   REGISTRY: docker.io
-  # 强制转换为全小写格式
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/yuriaudio2notion
 
 jobs:
