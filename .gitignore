@@ -175,7 +175,7 @@ cython_debug/
 
 # custom
 /data
-*_private.yaml
+*_private*
 waiting_up_private.txt
 /Backup
 /Test
