@@ -9,7 +9,8 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ github.repository }}
+  # 强制转换为全小写格式
+  IMAGE_NAME: ${{ lower(github.repository) }}
 
 jobs:
   build-and-push:
