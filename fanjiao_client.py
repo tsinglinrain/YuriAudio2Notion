@@ -187,7 +187,7 @@ def main():
             print(f"专辑名称: {data_relevant['name']}")
             
             data_cv = fanjiao_cv_api.fetch_album(url)
-            save_json(data_cv, f"data/data_{album_id}_cv.json")
+            # save_json(data_cv, f"data/data_{album_id}_cv.json")
             data_cv_relevant = fanjiao_cv_api.extract_relevant_data(data_cv)
             # save_json(data_cv_relevant, f"data/data_{album_id}_cv_relevant.json")
             print(f"CV姓名: {data_cv_relevant['main_cv']}")
