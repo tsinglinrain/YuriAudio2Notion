@@ -68,7 +68,11 @@ main函数以及调试函数, 大量函数重复, 可以用类封装, achieved
 
 用ts重写一个,练练手
 
-网页端开放一个接口,输入剧集连接就能解析
+webhook, 但是Notion似乎不支持, achieved, 但继续
+
+docker部署, 上传至Docker Hub, achieved
+
+网页端开放一个接口,输入剧集连接就能解析,这个还是算了,不做
 
 # icon获取方法
 
