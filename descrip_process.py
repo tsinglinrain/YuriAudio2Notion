@@ -127,7 +127,7 @@ class DescriptionProcessor():
         if num_str.isdigit():
             return int(num_str)
         
-        # 处理中文数字
+        # 处理中文数字,汉字只能处理二十及以内,比如二十五就处理不了,代码逻辑变成2+10+5
         total = 0
         for char in num_str:
             if char in chinese_num:
@@ -139,13 +139,7 @@ class DescriptionProcessor():
     @staticmethod
     def format_tag_list(data: List) -> List:
         """将tags list formated"""
-        formatted_data = []
-        for item in data:
-            formatted_data.append(
-                {
-                    "name": item,
-                }
-            )
+        formatted_data = list(map(lambda item: {"name": item}, data))
         return formatted_data   
 
 

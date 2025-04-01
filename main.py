@@ -36,15 +36,10 @@ def acquire_data(
         return None
 
 def format_list_data(key, data: List[Dict]) -> List:
-    """将cv和role分离"""
-    formatted_data = []
-    for item in data:
-        formatted_data.append(
-            {
-                "name": item.get(key, ""),
-            }
-        )
-    return formatted_data
+    """将cv和role分离
+    
+    map函数写法更简洁"""
+    return list(map(lambda item: {"name": item.get(key, "")}, data))
 
 def notion_para_get():
     with open("config_private.yaml", "r", encoding="utf-8") as file:
