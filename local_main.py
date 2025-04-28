@@ -20,10 +20,11 @@ from typing import List, Dict, Any
 def acquire_data(
         fanjiao_api: FanjiaoAPI, 
         fanjiao_cv_api: FanjiaoCVAPI, 
-        url: List[str]) -> Dict[str, Any]:
+        url: str) -> Dict[str, Any]:
     """acquire_data"""
 
     try:
+        data_album_url: dict = {'album_url': url}
         data = fanjiao_api.fetch_album(url)
         data_relevant = fanjiao_api.extract_relevant_data(data)            
         
@@ -34,7 +35,7 @@ def acquire_data(
         
         print(f"测试:CV姓名: {data_cv['main_cv']}")
         print("-" * 20)
-        data_ready = data_relevant | data_cv # Merge two dictionaries, Python 3.9+
+        data_ready = data_relevant | data_cv | data_album_url   # Merge muti dictionaries, Python 3.9+
         return data_ready
     
     except Exception as e:
@@ -52,13 +53,7 @@ def format_list_data(key, data: List[Dict]) -> List:
         )
     return formatted_data
 
-def notion_para_get_yml():
-    with open("config_private.yaml", "r", encoding="utf-8") as file:
-        config = yaml.safe_load(file)
 
-    notion_config = config.get("notion_config", {})
-    database_id, token = (i for i in notion_config.values())
-    return database_id, token
 
 def notion_para_get():
 
@@ -68,6 +63,8 @@ def notion_para_get():
 
 def upload_data(data_ready: Dict):
     """使用"""
+    album_Link = data_ready.get("album_url", "")
+    print(album_Link)
     name = data_ready.get("name", "")
     description = data_ready.get("description", "")
     
@@ -125,7 +122,8 @@ def upload_data(data_ready: Dict):
         supporting_cv,
         supporting_cv_role,
         commercial_drama,
-        episode_count
+        episode_count,
+        album_Link
     )
 
 def process(url):

@@ -5,7 +5,6 @@ from urllib.parse import urlparse, parse_qs
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 import os
-import yaml
 import logging
 
 # 仅本地开发时加载 .env 文件（Docker 环境会跳过）
@@ -155,7 +154,18 @@ class FanjiaoCVAPI(BaseFanjiaoAPI):
             "main_cv": main_cv,
             "supporting_cv": supporting_cv
         }
-                
+    
+    def extract_relevant_data_new(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        cv_list: List[Dict] = data.get("data", {}).get("cv_list", [])
+        
+        process_entry = lambda cv: {"name": cv.get("name", ""), "role_name": cv.get("role_name", "")}
+
+        main_cv = list(map(process_entry, filter(lambda x: x.get("cv_type") == 1, cv_list)))
+        supporting_cv = list(map(process_entry, filter(lambda x: x.get("cv_type") == 2, cv_list)))
+        return {
+            "main_cv": main_cv,
+            "supporting_cv": supporting_cv
+        }           
         
         
     
@@ -171,7 +181,7 @@ def main():
     #     "https://s.rela.me/c/1SqTNu?album_id=110838"
     # ]
     test_urls = [
-        "https://s.rela.me/c/1SqTNu?album_id=110633" # 晴天
+        "https://s.rela.me/c/1SqTNu?album_id=110942" # 晴天
     ]
 
     fanjiao_api = FanjiaoAPI()
@@ -183,13 +193,13 @@ def main():
 
             data = fanjiao_api.fetch_album(url)
             data_relevant = fanjiao_api.extract_relevant_data(data)            
-            # save_json(data_relevant, f"data/data_{album_id}_relevant.json")
+            save_json(data_relevant, f"data/data_{album_id}_relevant.json")
             print(f"专辑名称: {data_relevant['name']}")
             
             data_cv = fanjiao_cv_api.fetch_album(url)
             # save_json(data_cv, f"data/data_{album_id}_cv.json")
             data_cv_relevant = fanjiao_cv_api.extract_relevant_data(data_cv)
-            # save_json(data_cv_relevant, f"data/data_{album_id}_cv_relevant.json")
+            save_json(data_cv_relevant, f"data/data_{album_id}_cv_relevant.json")
             print(f"CV姓名: {data_cv_relevant['main_cv']}")
             print("-" * 20)
         # except Exception as e:

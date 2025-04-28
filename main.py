@@ -18,6 +18,7 @@ def acquire_data(
     """acquire_data"""
 
     try:
+        data_album_url: dict = {'album_url': url}
         data = fanjiao_api.fetch_album(url)
         data_relevant = fanjiao_api.extract_relevant_data(data)            
         
@@ -28,7 +29,7 @@ def acquire_data(
         
         print(f"测试:CV姓名: {data_cv['main_cv']}")
         print("-" * 20)
-        data_ready = data_relevant | data_cv # Merge two dictionaries, Python 3.9+
+        data_ready = data_relevant | data_cv | data_album_url # Merge two dictionaries, Python 3.9+
         return data_ready
     
     except Exception as e:
@@ -51,6 +52,8 @@ def notion_para_get():
 
 def upload_data(data_ready: Dict):
     """使用"""
+    album_Link = data_ready.get("album_url", "")
+    print(album_Link)
     name = data_ready.get("name", "")
     description = data_ready.get("description", "")
     
@@ -108,7 +111,8 @@ def upload_data(data_ready: Dict):
         supporting_cv,
         supporting_cv_role,
         commercial_drama,
-        episode_count
+        episode_count,
+        album_Link
     )
 
 def main():
@@ -126,17 +130,17 @@ def main():
     print(f"共读取到 {len(url_list)} 个URL：")
     # for url in url_list:
     #     print(url)
-
-    try:
-        fanjiao_api = FanjiaoAPI()
-        fanjiao_cv_api = FanjiaoCVAPI()
-        for url in url_list:
-            data_ready = acquire_data(fanjiao_api, fanjiao_cv_api, url)
-            if data_ready:
-                upload_data(data_ready)
-            else:
-                print(f"处理 {url}后, 内容为空")
-    except Exception as e:
-        logging.error(f"处理 {url} 失败: {str(e)}")
+    
+    # try:
+    fanjiao_api = FanjiaoAPI()
+    fanjiao_cv_api = FanjiaoCVAPI()
+    for url in url_list:
+        data_ready = acquire_data(fanjiao_api, fanjiao_cv_api, url)
+        if data_ready:
+            upload_data(data_ready)
+        else:
+            print(f"处理 {url}后, 内容为空")
+    # except Exception as e:
+        # logging.error(f"处理 {url} 失败: {str(e)}")
 if __name__ == "__main__":
     main()
