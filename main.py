@@ -43,11 +43,8 @@ def format_list_data(key, data: List[Dict]) -> List:
     return list(map(lambda item: {"name": item.get(key, "")}, data))
 
 def notion_para_get():
-    with open("config_private.yaml", "r", encoding="utf-8") as file:
-        config = yaml.safe_load(file)
-
-    notion_config = config.get("notion_config", {})
-    database_id, token = (i for i in notion_config.values())
+    database_id = os.getenv("NOTION_DATABASE_ID")
+    token = os.getenv("NOTION_TOKEN")
     return database_id, token
 
 def upload_data(data_ready: Dict):
