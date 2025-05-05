@@ -5,6 +5,7 @@ import os
 import logging
 import re
 from dotenv import load_dotenv
+from pprint import pprint
 
 from notion_client_cus import NotionClient
 from fanjiao_client import FanjiaoAPI, FanjiaoCVAPI
