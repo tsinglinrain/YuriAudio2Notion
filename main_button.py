@@ -117,8 +117,8 @@ def upload_data(page_id: str, data_ready: Dict):
 def process(page_id, url):
 
     # 验证结果
-    print(f"读取到URL: {url}")
     print(f"读取到page_id: {page_id}")
+    print(f"读取到URL: {url}")
 
     # try:
     fanjiao_api = FanjiaoAPI()
@@ -136,7 +136,7 @@ def main():
     url = "https://s.rela.me/c/1SqTNu?album_id=110750"
     page_id = "1ea99f72bada80d6a892fce371d70ce9"
     process(page_id, url)
-    
+
 
 
 if __name__ == "__main__":

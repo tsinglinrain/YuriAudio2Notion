@@ -44,7 +44,7 @@ def notion_webhook_database():
     # 例如：根据数据更新其他系统、发送通知、记录日志等
     try:
         # 尝试从 Notion 数据中获取 URL
-        album_url = data["data"]["properties"]["Album Link"]["url"]
+        album_url = data["data"]["properties"]["Upload URL"]["url"]
         print("Extracted URL from Notion data:", album_url)
 
         # 确保获取到了有效的 URL (非空，且可能需要更多校验)
