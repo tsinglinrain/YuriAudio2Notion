@@ -87,6 +87,14 @@ api抓取的, 有一些是`已完结`, `完结`, 最好是`已完结`
 3. 选择需要的`emoji`
 4. 复制过来🎧(emoji不一样, 不要紧, 上传上去都是一样的)
 
+# webhook的进一步强化
+
+database中设置按钮,在property中键入url的内容后,点击按钮即可在当前的数据库中
+
+可能需要对兼容性和美观性做进一步的取舍,需要单独添加一个url的property,
+定义为`Upload url`
+
+对目前代码进行进一步重构,可以参考之前`rsshub`的写法
 
 
 # Acknowledgement
