@@ -56,11 +56,13 @@ def notion_webhook_database():
         # 构建发送给第二个服务的 JSON 数据，使用提取到的 album_url 变量作为值
         payload_to_send = {"url": album_url}
         page_id = data["data"]["id"]
+        database_id = data["data"]["parent"]["database_id"]
         print("Sending payload to second service:", payload_to_send)
         print("Page ID:", page_id)
+        print("Database ID:", database_id)
 
         # 执行当前文件夹下程序
-        main_button.process(page_id, album_url)
+        main_button.process(database_id, page_id, album_url)
         print("Completed main_button.process")
         
         # 返回一个成功响应给 Notion，包含第二个服务的响应状态码

@@ -48,7 +48,7 @@ def notion_para_get():
     token = os.getenv("NOTION_TOKEN")
     return database_id, token
 
-def upload_data(page_id: str, data_ready: Dict):
+def upload_data(database_id:str, page_id: str, data_ready: Dict):
     """使用"""
     album_Link = data_ready.get("album_url", "")
     print(album_Link)
@@ -90,7 +90,7 @@ def upload_data(page_id: str, data_ready: Dict):
     
     episode_count = property_cus.episode_count
 
-    database_id, token = notion_para_get()
+    _, token = notion_para_get()
 
     notion_client = NotionClient(database_id, token, "fanjiao")
     notion_client.update_in_database_paper(
@@ -114,28 +114,30 @@ def upload_data(page_id: str, data_ready: Dict):
         album_Link
     )
 
-def process(page_id, url):
+def process(database_id, page_id, url):
 
     # 验证结果
+    print(f"读取到database_id: {database_id}")
     print(f"读取到page_id: {page_id}")
     print(f"读取到URL: {url}")
-
+    
     # try:
     fanjiao_api = FanjiaoAPI()
     fanjiao_cv_api = FanjiaoCVAPI()
     
     data_ready = acquire_data(fanjiao_api, fanjiao_cv_api, url)
     if data_ready:
-        upload_data(page_id, data_ready)
+        upload_data(database_id, page_id, data_ready)
     else:
         print(f"处理 {url}后, 内容为空")
     # except Exception as e:
         # logging.error(f"处理 {url} 失败: {str(e)}")
 
 def main():
+    database_id = "1b899f72bada80e08c7cd639f1df85af"
+    page_id = "1ec99f72bada8062a236e19187f012b0"
     url = "https://s.rela.me/c/1SqTNu?album_id=110750"
-    page_id = "1ea99f72bada80d6a892fce371d70ce9"
-    process(page_id, url)
+    process(database_id, page_id, url)
 
 
 
