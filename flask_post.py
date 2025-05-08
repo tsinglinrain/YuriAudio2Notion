@@ -2,16 +2,17 @@
 # -*- coding: utf-8 -*- # 可选，指定编码
 
 from flask import Flask, request, jsonify
-import json # Optional: For pretty printing JSON
+import json  # Optional: For pretty printing JSON
 import requests
 
 import main_button
 
 app = Flask(__name__)
 
+
 # 定义接收 Notion webhook 的路由
 # 这个路由将监听 POST 请求
-@app.route('/webhook-database', methods=['POST'])
+@app.route("/webhook-database", methods=["POST"])
 def notion_webhook_database():
     """
     处理来自 Notion 的 webhook POST 请求
@@ -39,7 +40,6 @@ def notion_webhook_database():
         print(f"{header}: {value}")
     print("-------------------------------------")
 
-
     # 在这里添加您的逻辑来处理 Notion 发送的数据
     # 例如：根据数据更新其他系统、发送通知、记录日志等
     try:
@@ -49,10 +49,17 @@ def notion_webhook_database():
 
         # 确保获取到了有效的 URL (非空，且可能需要更多校验)
         if not album_url:
-             print("Warning: Album Link URL is empty.")
-             return jsonify({"status": "warning", 
-                             "message": "Album Link URL is empty in Notion data"}), 200 # 或者根据需要返回错误
-        
+            print("Warning: Album Link URL is empty.")
+            return (
+                jsonify(
+                    {
+                        "status": "warning",
+                        "message": "Album Link URL is empty in Notion data",
+                    }
+                ),
+                200,
+            )  # 或者根据需要返回错误
+
         # 构建发送给第二个服务的 JSON 数据，使用提取到的 album_url 变量作为值
         payload_to_send = {"url": album_url}
         page_id = data["data"]["id"]
@@ -64,29 +71,53 @@ def notion_webhook_database():
         # 执行当前文件夹下程序
         main_button.process(database_id, page_id, album_url)
         print("Completed main_button.process")
-        
+
         # 返回一个成功响应给 Notion，包含第二个服务的响应状态码
-        return jsonify({
-            "status": "success",
-            "message": "Webhook received and data forwarded!"
-        }), 200
+        return (
+            jsonify(
+                {"status": "success", "message": "Webhook received and data forwarded!"}
+            ),
+            200,
+        )
 
     except KeyError as e:
         # 如果路径不对，捕获 KeyError
         print(f"Error: Missing key in Notion data: {e}")
-        return jsonify({"status": "error", "message": f"Missing expected key in Notion data: {e}"}), 400
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Missing expected key in Notion data: {e}",
+                }
+            ),
+            400,
+        )
 
     except requests.exceptions.RequestException as e:
         # 捕获发送请求到第二个服务时的错误
         print(f"Error sending request to second service: {e}")
-        return jsonify({"status": "error", "message": f"Failed to forward data to second service: {e}"}), 500
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Failed to forward data to second service: {e}",
+                }
+            ),
+            500,
+        )
 
     except Exception as e:
         # 捕获其他未知错误
         print(f"An unexpected error occurred: {e}")
-        return jsonify({"status": "error", "message": f"An unexpected error occurred: {e}"}), 500
+        return (
+            jsonify(
+                {"status": "error", "message": f"An unexpected error occurred: {e}"}
+            ),
+            500,
+        )
 
-@app.route('/webhook-page', methods=['POST'])
+
+@app.route("/webhook-page", methods=["POST"])
 def notion_webhook_page():
     """
     处理来自 Notion 的 webhook POST 请求。
@@ -99,7 +130,7 @@ def notion_webhook_page():
     # 从请求头中获取 'url' 的值
     # 使用 .get() 方法更安全，如果头不存在不会抛出 KeyError，而是返回 None
     # request.headers 对头名称不区分大小写
-    album_url_from_header = request.headers.get('url')
+    album_url_from_header = request.headers.get("url")
 
     # print("\nRequest Headers:")
     # # 打印所有请求头，有助于调试
@@ -111,10 +142,15 @@ def notion_webhook_page():
     if not album_url_from_header:
         print("Error: 'url' header not found in the request.")
         # 如果必需的 'url' 头不存在，返回错误响应
-        return jsonify({
-            "status": "error",
-            "message": "'url' header is missing from the request headers."
-        }), 400 # 400 Bad Request 是一个合适的响应码
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "'url' header is missing from the request headers.",
+                }
+            ),
+            400,
+        )  # 400 Bad Request 是一个合适的响应码
 
     print("Found 'url' in headers:", album_url_from_header)
 
@@ -125,7 +161,6 @@ def notion_webhook_page():
     #     print("Received JSON body data (if any):")
     #     print(json.dumps(data, indent=4))
 
-
     # --- 向第二个服务转发 URL ---
     try:
         # 构建发送给第二个服务的 JSON 数据，使用从请求头中获取到的 URL 变量
@@ -135,51 +170,75 @@ def notion_webhook_page():
         # 向第二个服务发送 POST 请求
         response = requests.post(
             url="https://yuri.soyet.icu/webhook",
-            json = payload_to_send # 发送包含实际 URL 的字典
+            json=payload_to_send,  # 发送包含实际 URL 的字典
         )
 
         print("Response code from second service:", response.status_code)
-        print("Response body from second service:", response.text) # 打印响应体以便调试
+        print("Response body from second service:", response.text)  # 打印响应体以便调试
 
         # 根据第二个服务的响应状态码决定返回给 Notion 的状态
         if response.status_code == 200:
-             return jsonify({
-                "status": "success",
-                "message": "Webhook received and data forwarded successfully from header!",
-                "forwarding_response_code": response.status_code,
-                "forwarding_response_body": response.text # 可以选择包含响应体
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "status": "success",
+                        "message": "Webhook received and data forwarded successfully from header!",
+                        "forwarding_response_code": response.status_code,
+                        "forwarding_response_body": response.text,  # 可以选择包含响应体
+                    }
+                ),
+                200,
+            )
         else:
             # 如果第二个服务返回非 200 状态码，可能也需要返回一个错误给 Notion 或记录
             print(f"Second service returned non-200 status: {response.status_code}")
-            return jsonify({
-                "status": "warning", # 或 error, 取决于您希望 Notion 如何处理
-                "message": f"Data forwarded, but second service returned status code {response.status_code}",
-                "forwarding_response_code": response.status_code,
-                "forwarding_response_body": response.text
-            }), 502 # 502 Bad Gateway 或 500 Internal Server Error 都可以考虑
-
+            return (
+                jsonify(
+                    {
+                        "status": "warning",  # 或 error, 取决于您希望 Notion 如何处理
+                        "message": f"Data forwarded, but second service returned status code {response.status_code}",
+                        "forwarding_response_code": response.status_code,
+                        "forwarding_response_body": response.text,
+                    }
+                ),
+                502,
+            )  # 502 Bad Gateway 或 500 Internal Server Error 都可以考虑
 
     except requests.exceptions.RequestException as e:
         # 捕获发送请求到第二个服务时的错误（例如网络问题）
         print(f"Error sending request to second service: {e}")
-        return jsonify({"status": "error", "message": f"Failed to forward data to second service: {e}"}), 500
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Failed to forward data to second service: {e}",
+                }
+            ),
+            500,
+        )
 
     except Exception as e:
         # 捕获其他未知错误
         print(f"An unexpected error occurred: {e}")
-        return jsonify({"status": "error", "message": f"An unexpected error occurred: {e}"}), 500
-
+        return (
+            jsonify(
+                {"status": "error", "message": f"An unexpected error occurred: {e}"}
+            ),
+            500,
+        )
 
 
 # 可选：添加一个根路由用于简单测试服务是否在运行
-@app.route('/')
+@app.route("/")
 def index():
-    return "Flask webhook server is running. Ready to receive Notion webhooks at /webhook"
+    return (
+        "Flask webhook server is running. Ready to receive Notion webhooks at /webhook"
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # 运行 Flask 应用
     # debug=True 会在代码修改时自动重启服务器，方便开发
     # host='0.0.0.0' 允许从外部访问，但仅建议在开发或测试环境使用
     # port=5000 是默认端口，您可以修改
-    app.run(debug=True, host='0.0.0.0', port=5050)
+    app.run(debug=True, host="0.0.0.0", port=5050)
