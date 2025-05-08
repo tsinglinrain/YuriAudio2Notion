@@ -102,6 +102,12 @@ database中设置按钮, 在property中键入url的内容后, 点击按钮即可
 database_id = data["data"]["parent"]["database_id"]
 ```
 
+# 分支合并
+
+两个分支合并到main分支, 有点困难, 部分文件可能需要改成比较合适的名字
+
+`yuri.soyet.icu`的这个似乎用不上,感觉可以做一个备份即可.
+
 # 交流
 
 喜欢百广, 用Notion, 想用Notion整理, 我觉得三个凑齐的人少之又少.
