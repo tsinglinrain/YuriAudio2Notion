@@ -85,17 +85,30 @@ api抓取的, 有一些是`已完结`, `完结`, 最好是`已完结`
 1. 打开任意`page`
 2. `/`呼出菜单后,键入`emoji`,选择`Emoji`后弹出emoji菜单
 3. 选择需要的`emoji`
-4. 复制过来🎧(emoji不一样, 不要紧, 上传上去都是一样的)
+4. 复制过来🎧(emoji不一样, 不要紧, 上传上去都是一样的)不一样是各个客户端显示得不一样.
 
 # webhook的进一步强化
 
-database中设置按钮,在property中键入url的内容后,点击按钮即可在当前的数据库中
+database中设置按钮, 在property中键入url的内容后, 点击按钮即可在当前的数据库中, achieved
 
 可能需要对兼容性和美观性做进一步的取舍,需要单独添加一个url的property,
-定义为`Upload url`
+定义为`Upload url`, achieved
 
-对目前代码进行进一步重构,可以参考之前`rsshub`的写法
+对目前代码进行进一步重构, 可以参考之前`rsshub`的写法, achieved
 
+舍弃再docker中写入环境变量的写法, 改为从当前界面的按钮中获取当前数据据的`database id`, achieved
+
+```python
+database_id = data["data"]["parent"]["database_id"]
+```
+
+# 交流
+
+喜欢百广, 用Notion, 想用Notion整理, 我觉得三个凑齐的人少之又少.
+
+如果你看到这里, 希望这个小项目能为你带来帮助. 有不正确之处, 欢迎指出, pr.
+
+如果你对代码有些不懂之处, 欢迎提问.
 
 # Acknowledgement
 
