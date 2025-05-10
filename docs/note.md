@@ -108,6 +108,10 @@ database_id = data["data"]["parent"]["database_id"]
 
 `yuri.soyet.icu`的这个似乎用不上,感觉可以做一个备份即可.
 
+Claude prompt
+
+请为我评估:1.当前分支下的文件命名的是否符合规范.部分文件说明如下,`main.py`为本地下直接运行该函数达成的目标,`main.button`由`main.py`修改得到,为`flask_post.py`服务,在`Dockerfile`中可以体现.`local_main`为`flask_main.py`服务,为add-flask分支的文件,在add-flask分支的`Dockerfile`中可以体现.
+
 # 交流
 
 喜欢百广, 用Notion, 想用Notion整理, 我觉得三个凑齐的人少之又少.
