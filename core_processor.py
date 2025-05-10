@@ -234,6 +234,9 @@ def process_url(
         fanjiao_processor = FanjiaoProcessor()
         notion_processor = NotionProcessor()
 
+        logging.info(f"FANJIAO_BASE_URL: {fanjiao_processor.fanjiao_api.get_base_url()}")
+        logging.info(f"FANJIAO_CV_BASE_URL: {fanjiao_processor.fanjiao_cv_api.get_base_url()}")
+        
         # 获取数据
         data_ready = fanjiao_processor.acquire_data(url)
 
