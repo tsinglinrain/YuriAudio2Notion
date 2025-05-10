@@ -73,7 +73,8 @@ class BaseFanjiaoAPI:
         """执行API请求核心逻辑"""
         query = self._build_query(album_id)
         api_url = f"{self._BASE_URL}?{query}"
-
+        logging.info(f"请求的API URL: {api_url}")
+        
         headers = {**self.headers, "signature": FanjiaoSigner.generate(query)}
 
         try:
