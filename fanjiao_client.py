@@ -90,6 +90,7 @@ class BaseFanjiaoAPI:
         :return: 解析后的JSON数据
         """
         album_id = self._extract_album_id(url)
+        logging.info(f"提取到的专辑ID: {album_id}")
         return self._fetch_data(album_id)
 
 

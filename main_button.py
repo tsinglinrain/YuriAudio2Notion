@@ -27,6 +27,7 @@ def process(database_id: str, page_id: str, url: str) -> bool:
         处理是否成功
     """
     # 记录接收到的参数
+    logging.info("-------------------------------------")
     logging.info(f"读取到database_id: {database_id}")
     logging.info(f"读取到page_id: {page_id}")
     logging.info(f"读取到URL: {url}")
