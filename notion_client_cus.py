@@ -1,6 +1,5 @@
 import requests
 from notion_client import Client
-import yaml
 from dotenv import load_dotenv
 import os
 import re

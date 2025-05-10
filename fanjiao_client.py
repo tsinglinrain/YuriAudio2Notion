@@ -100,7 +100,7 @@ class FanjiaoAPI(BaseFanjiaoAPI):
 
     @classmethod
     def get_base_url(cls) -> str:
-        """yaml方式读取"""
+        """env方式读取"""
         if not cls._BASE_URL:
             cls._BASE_URL = os.getenv("FANJIAO_BASE_URL")
         return cls._BASE_URL
@@ -131,7 +131,7 @@ class FanjiaoCVAPI(BaseFanjiaoAPI):
 
     @classmethod
     def get_base_url(cls) -> str:
-        """yaml方式读取"""
+        """env方式读取"""
         if not cls._BASE_URL:
             cls._BASE_URL = os.getenv("FANJIAO_CV_BASE_URL")
         return cls._BASE_URL
