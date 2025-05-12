@@ -2,7 +2,7 @@ FROM python:3.12.10-alpine AS builder
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.12.10-alpine
 WORKDIR /app
@@ -11,7 +11,7 @@ RUN apk add --no-cache curl
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /usr/local /usr/local
 COPY . .
 
 ENV PATH=/root/.local/bin:$PATH \
@@ -19,7 +19,7 @@ ENV PATH=/root/.local/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-RUN chown -R appuser:appgroup /app /root/.local
+RUN chown -R appuser:appgroup /app /usr/local
 USER appuser
 
 EXPOSE 5050

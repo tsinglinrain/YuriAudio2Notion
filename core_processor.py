@@ -6,11 +6,16 @@ import logging
 from typing import List, Dict, Any, Optional, Union
 from urllib.parse import urlparse
 
+from dotenv import load_dotenv
+
 from fanjiao_client import FanjiaoAPI, FanjiaoCVAPI
 from notion_client_cus import NotionClient
 from descrip_process import DescriptionProcessor
 
-
+# 仅本地开发时加载 .env 文件（Docker 环境会跳过）
+if os.getenv("ENV") != "production":
+    load_dotenv()  # 默认加载 .env 文件
+    
 class FanjiaoProcessor:
     """处理fanjiao链接相关的核心类"""
 
