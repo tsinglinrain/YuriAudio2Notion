@@ -7,7 +7,7 @@ import requests
 import logging
 
 from core_processor import process_url
-from api_serve import process
+from api_server import process
 
 # 配置日志
 logging.basicConfig(
