@@ -1,0 +1,18 @@
+services:
+  web:
+    build: .
+    container_name: webhook_fanjiao
+    ports:
+      - "5000:5000"
+    environment:
+      - ENV=production
+      - FLASK_ENV=production
+      - NOTION_DATABASE_ID=
+      - NOTION_TOKEN=
+      - FANJIAO_SALT=
+      - FANJIAO_BASE_URL=
+      - FANJIAO_CV_BASE_URL=
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    command: gunicorn --bind 0.0.0.0:5000 --workers 3 --timeout 120 flask_main:app

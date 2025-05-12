@@ -66,14 +66,59 @@ main函数以及调试函数, 大量函数重复, 可以用类封装, achieved
 
 正剧的剧集数也可以传入, 抓"正剧", achieved
 
+用ts重写一个, 练练手, doing
+
+webhook, 但是Notion似乎不支持, achieved, 但继续
+
+docker部署, 上传至Docker Hub, achieved
+
+网页端开放一个接口, 输入剧集连接就能解析, 这个还是算了, 不做
+
+api抓取的, 有一些是`已完结`, `完结`, 最好是`已完结`
+
+主役和饰演的角色的颜色不一致,如果能一一对应就好了, 需要查询一下接口
+
+增添`Album Link`这个属性, achieved
+
 # icon获取方法
 
 1. 打开任意`page`
 2. `/`呼出菜单后,键入`emoji`,选择`Emoji`后弹出emoji菜单
 3. 选择需要的`emoji`
-4. 复制过来🎧(emoji不一样, 不要紧, 上传上去都是一样的)
+4. 复制过来🎧(emoji不一样, 不要紧, 上传上去都是一样的)不一样是各个客户端显示得不一样.
 
+# webhook的进一步强化
 
+database中设置按钮, 在property中键入url的内容后, 点击按钮即可在当前的数据库中, achieved
+
+可能需要对兼容性和美观性做进一步的取舍,需要单独添加一个url的property,
+定义为`Upload url`, achieved
+
+对目前代码进行进一步重构, 可以参考之前`rsshub`的写法, achieved
+
+舍弃再docker中写入环境变量的写法, 改为从当前界面的按钮中获取当前数据据的`database id`, achieved
+
+```python
+database_id = data["data"]["parent"]["database_id"]
+```
+
+# 分支合并
+
+两个分支合并到main分支, 有点困难, 部分文件可能需要改成比较合适的名字
+
+`yuri.soyet.icu`的这个似乎用不上,感觉可以做一个备份即可.
+
+Claude prompt
+
+请为我评估:1.当前分支下的文件命名的是否符合规范.部分文件说明如下,`main.py`为本地下直接运行该函数达成的目标,`main.button`由`main.py`修改得到,为`flask_post.py`服务,在`Dockerfile`中可以体现.`local_main`为`flask_main.py`服务,为add-flask分支的文件,在add-flask分支的`Dockerfile`中可以体现.
+
+# 交流
+
+喜欢百广, 用Notion, 想用Notion整理, 我觉得三个凑齐的人少之又少.
+
+如果你看到这里, 希望这个小项目能为你带来帮助. 有不正确之处, 欢迎指出, pr.
+
+如果你对代码有些不懂之处, 欢迎提问.
 
 # Acknowledgement
 
