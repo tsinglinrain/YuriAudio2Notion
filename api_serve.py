@@ -46,8 +46,8 @@ def process(database_id: str, page_id: str, url: str) -> bool:
 def main():
     """测试函数"""
     # 测试参数
-    database_id = "1b899f72bada80e08c7cd639f1df85af"
-    page_id = "1ef99f72bada8075915dd602d36abcd8"
+    database_id = "1b8999f72bada8075915dd602d3685af"
+    page_id = "1ef72bada80e08c7cd639f1dcd8"
     url = "https://s.rela.me/c/1SqTNu?album_id=110750"
     
     # 测试处理

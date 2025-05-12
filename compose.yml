@@ -1,18 +1,18 @@
 services:
-  web:
-    build: .
-    container_name: webhook_fanjiao
+  yuri_webhook:
+    image: 'tsinglinrain/yuriaudio2notion:latest'
+    container_name: fanjiao
     ports:
-      - "5000:5000"
+      - "5050:5050"
     environment:
       - ENV=production
       - FLASK_ENV=production
-      - NOTION_DATABASE_ID=
-      - NOTION_TOKEN=
+      - NOTION_DATABASE_ID=133**************
+      - NOTION_TOKEN=ntn_*********
       - FANJIAO_SALT=
       - FANJIAO_BASE_URL=
       - FANJIAO_CV_BASE_URL=
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    command: gunicorn --bind 0.0.0.0:5000 --workers 3 --timeout 120 flask_main:app
+    command: gunicorn --bind 0.0.0.0:5050 --workers 3 --timeout 120 flask_post:app

@@ -2,10 +2,10 @@ name: Docker Build and Push
 
 on:
   push:
-    branches: [ "main", "feat/add-flask", "feat/add-workflow" ]
+    branches: [ "main"]
     tags: [ "v*.*.*" ]
   pull_request:
-    branches: [ "main", "feat/add-flask", "feat/add-workflow" ]
+    branches: [ "main"]
 
 env:
   REGISTRY: docker.io

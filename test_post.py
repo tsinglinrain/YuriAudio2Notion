@@ -1,7 +1,7 @@
 import requests
 
 response = requests.post(
-    url="http://127.0.0.1:5000/webhook",
+    url="http://127.0.0.1:5050/webhook-url",
     json={"url": "https://s.rela.me/c/1SqTNu?album_id=107537"},
 )
 
