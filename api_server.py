@@ -47,7 +47,7 @@ def main():
     """测试函数"""
     # 测试参数
     database_id = "1b8999f72bada8075915dd602d3685af"
-    page_id = "1ef72bada80e08c7cd639f1dcd8"
+    page_id = "1f299f72bada807ebf79c2010f9493d9"
     url = "https://s.rela.me/c/1SqTNu?album_id=110750"
     
     # 测试处理

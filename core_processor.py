@@ -15,7 +15,8 @@ from descrip_process import DescriptionProcessor
 # 仅本地开发时加载 .env 文件（Docker 环境会跳过）
 if os.getenv("ENV") != "production":
     load_dotenv()  # 默认加载 .env 文件
-    
+
+
 class FanjiaoProcessor:
     """处理fanjiao链接相关的核心类"""
 
@@ -174,50 +175,7 @@ class NotionProcessor:
         """
         _, token = self.get_notion_credentials()
         notion_client = NotionClient(database_id, token, "fanjiao")
-
-        if page_id:
-            # 更新现有页面
-            notion_client.update_in_database_paper(
-                page_id,
-                data["name"],
-                data["description"],
-                data["description_sequel"],
-                data["publish_date"],
-                data["update_frequency"],
-                data["ori_price"],
-                data["author_name"],
-                data["up_name"],
-                data["tags"],
-                data["source"],
-                data["main_cv"],
-                data["main_cv_role"],
-                data["supporting_cv"],
-                data["supporting_cv_role"],
-                data["commercial_drama"],
-                data["episode_count"],
-                data["album_link"],
-            )
-        else:
-            # 创建新页面
-            notion_client.cre_in_database_paper(
-                data["name"],
-                data["description"],
-                data["description_sequel"],
-                data["publish_date"],
-                data["update_frequency"],
-                data["ori_price"],
-                data["author_name"],
-                data["up_name"],
-                data["tags"],
-                data["source"],
-                data["main_cv"],
-                data["main_cv_role"],
-                data["supporting_cv"],
-                data["supporting_cv_role"],
-                data["commercial_drama"],
-                data["episode_count"],
-                data["album_link"],
-            )
+        notion_client.manage_database_paper(**data, page_id=page_id)
 
 
 # 主处理函数
@@ -238,7 +196,7 @@ def process_url(
         # 初始化处理器
         fanjiao_processor = FanjiaoProcessor()
         notion_processor = NotionProcessor()
-        
+
         # 获取数据
         data_ready = fanjiao_processor.acquire_data(url)
 
