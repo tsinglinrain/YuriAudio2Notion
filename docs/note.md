@@ -112,6 +112,33 @@ Claude prompt
 
 请为我评估:1.当前分支下的文件命名的是否符合规范.部分文件说明如下,`main.py`为本地下直接运行该函数达成的目标,`main.button`由`main.py`修改得到,为`flask_post.py`服务,在`Dockerfile`中可以体现.`local_main`为`flask_main.py`服务,为add-flask分支的文件,在add-flask分支的`Dockerfile`中可以体现.
 
+## 安全设置
+
+为防止未授权使用, webhook 接口现已添加 API 密钥验证。使用时请按照以下步骤配置：
+
+1. 在 `.env` 文件中添加 `API_KEY=your_secure_key`（替换为你自己的安全密钥）
+2. 在发送请求时,在请求头中添加 `YURI-API-KEY` 或在查询参数中添加 `api_key`
+
+示例 (使用请求头):
+```python
+import requests
+
+response = requests.post(
+    url="http://your-server:5050/webhook-url",
+    json={"url": "your_url_here"},
+    headers={"YURI-API-KEY": "your_secure_key"}
+)
+```
+
+示例 (使用查询参数):
+```
+http://your-server:5050/webhook-url?api_key=your_secure_key
+```
+
+如果未配置 API_KEY,系统将记录警告日志,但仍会允许请求通过（不推荐在生产环境中这样设置）。
+
+假如这破项目真有人看, 我建议你也加上. 
+
 # 交流
 
 喜欢百广, 用Notion, 想用Notion整理, 我觉得三个凑齐的人少之又少.

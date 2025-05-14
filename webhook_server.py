@@ -5,6 +5,9 @@ from flask import Flask, request, jsonify
 import json  # Optional: For pretty printing JSON
 import requests
 import logging
+import os
+import functools
+from dotenv import load_dotenv
 
 from core_processor import process_url
 from api_server import process
@@ -14,11 +17,40 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
+# 加载环境变量
+if os.getenv("ENV") != "production":
+    load_dotenv()
+
+# 获取API密钥
+API_KEY = os.getenv("API_KEY")
+if not API_KEY:
+    logging.warning("API_KEY 环境变量未设置，这将导致webhook接口不安全！")
+
 app = Flask(__name__)
 
+# API密钥验证装饰器
+def require_api_key(f):
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        # 如果未设置API密钥，记录警告并继续
+        if not API_KEY:
+            logging.warning("API_KEY 未设置，跳过验证")
+            return f(*args, **kwargs)
+            
+        # 从请求中获取API密钥
+        provided_key = request.headers.get('YURI-API-KEY') or request.args.get('api_key')
+        
+        # 验证API密钥
+        if provided_key != API_KEY:
+            logging.warning(f"无效的API密钥: {provided_key}")
+            return jsonify({"status": "error", "message": "未授权访问"}), 401
+            
+        return f(*args, **kwargs)
+    return decorated
 
 # 定义接收 Notion webhook 的路由
 @app.route("/webhook-database", methods=["POST"])
+@require_api_key
 def notion_webhook_database():
     """
     处理来自 Notion 的 webhook POST 请求
@@ -111,6 +143,7 @@ def notion_webhook_database():
 
 
 @app.route("/webhook-page", methods=["POST"])
+@require_api_key
 def notion_webhook_page():
     """
     处理来自 Notion 的 webhook POST 请求。
@@ -163,6 +196,7 @@ def notion_webhook_page():
 
 # 传入url, 需要提前在docker中设置好环境变量
 @app.route("/webhook-url", methods=["POST"])
+@require_api_key
 def notion_webhook_url():
     # 参数校验
     if not request.json or "url" not in request.json:

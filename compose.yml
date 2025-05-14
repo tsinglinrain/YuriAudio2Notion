@@ -12,6 +12,7 @@ services:
       - FANJIAO_SALT=
       - FANJIAO_BASE_URL=
       - FANJIAO_CV_BASE_URL=
+      - API_KEY=****************
     volumes:
       - ./data:/app/data
     restart: unless-stopped
