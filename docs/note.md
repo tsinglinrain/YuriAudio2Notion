@@ -139,6 +139,10 @@ http://your-server:5050/webhook-url?api_key=your_secure_key
 
 假如这破项目真有人看, 我建议你也加上. 
 
+# post请求的增强
+
+对于notion database的post请求目前还是只能在Notion端执行测试，过于繁琐，应当仿照Notion的post请求格式，自己在本地请求, database achieved, page尚未
+
 # 交流
 
 喜欢百广, 用Notion, 想用Notion整理, 我觉得三个凑齐的人少之又少.
