@@ -3,7 +3,7 @@ from notion_client import Client
 from dotenv import load_dotenv
 import os
 import re
-from descrip_process import DescriptionProcessor
+from src.core.descrip_process import DescriptionProcessor
 from typing import Dict, List, Any
 import logging
 from pprint import pprint

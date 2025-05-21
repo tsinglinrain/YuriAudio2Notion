@@ -6,7 +6,7 @@ Notion按钮处理脚本 - 处理单个URL并更新指定页面
 """
 
 import logging
-from core_processor import process_url
+from src.core.core_processor import process_url
 
 # 配置日志
 logging.basicConfig(
