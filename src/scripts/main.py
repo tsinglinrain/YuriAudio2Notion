@@ -7,7 +7,7 @@
 
 import logging
 from typing import List
-from core_processor import process_url_list
+from src.core.core_processor import process_url_list
 
 # 配置日志
 logging.basicConfig(

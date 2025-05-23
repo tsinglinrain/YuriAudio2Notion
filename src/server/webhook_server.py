@@ -9,8 +9,8 @@ import os
 import functools
 from dotenv import load_dotenv
 
-from core_processor import process_url
-from api_server import process
+from src.core.core_processor import process_url
+from src.server.api_server import process
 
 # 配置日志
 logging.basicConfig(
