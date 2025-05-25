@@ -12,7 +12,8 @@ import json
 # 仅本地开发时加载 .env 文件（Docker 环境会跳过）
 if os.getenv("ENV") != "production":
     load_dotenv()  # 默认加载 .env 文件
-
+    print("当前工作目录:", os.getcwd())
+    print("NOTION_TOKEN =", os.getenv("NOTION_TOKEN"))
 
 class NotionClient:
     def __init__(self, database_id, token, payment_platform):
@@ -99,7 +100,7 @@ class NotionClient:
                     "time_zone": time_zone,  # 时区, 参见官方文档
                 }
             },
-            "更新": {"select": {"name": update_frequency}},
+            "更新": {"multi_select": [{"name": update_frequency}]},
             "Price": {"number": ori_price},
             "原著": {"select": {"name": author_name}},
             "up主": {"select": {"name": up_name}},
@@ -302,6 +303,7 @@ def main():
     token = os.getenv("NOTION_TOKEN")
 
     notion_client = NotionClient(database_id, token, "fanjiao")
+    # print(client.users.list())
     notion_client.cre_in_database_paper(
         name,
         description,
@@ -402,6 +404,6 @@ def page_test():
 
 
 if __name__ == "__main__":
-    # main()
-    main_update()
+    main()
+    # main_update()
     # page_test()
