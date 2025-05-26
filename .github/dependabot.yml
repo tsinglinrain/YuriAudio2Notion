@@ -5,19 +5,57 @@
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
-    schedule:
-      interval: "weekly"
-  
-  # 监控Python依赖
+  # Python依赖更新
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "python"
+    reviewers:
+      - "tsinglinrain"  # 替换为你的GitHub用户名
+    open-pull-requests-limit: 5
     
-  # 监控GitHub Actions
+  # Dockerfile依赖更新
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "docker"
+    reviewers:
+      - "tsinglinrain"  # 替换为你的GitHub用户名
+    open-pull-requests-limit: 3
+    
+  # Docker Compose更新（如果有多个compose文件，可能需要多个配置）
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:30"
+    labels:
+      - "dependencies"
+      - "docker-compose"
+    reviewers:
+      - "tsinglinrain"  # 替换为你的GitHub用户名
+    
+  # GitHub Actions workflow更新
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
+      day: "1"
+      time: "10:00"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    reviewers:
+      - "tsinglinrain"  # 替换为你的GitHub用户名
+    open-pull-requests-limit: 2
