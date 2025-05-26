@@ -19,7 +19,7 @@ updates:
       - "tsinglinrain"  # 替换为你的GitHub用户名
     open-pull-requests-limit: 5
     
-  # Dockerfile依赖更新
+  # Docker依赖更新
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
@@ -32,19 +32,6 @@ updates:
     reviewers:
       - "tsinglinrain"  # 替换为你的GitHub用户名
     open-pull-requests-limit: 3
-    
-  # Docker Compose更新（如果有多个compose文件，可能需要多个配置）
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "tuesday"
-      time: "09:30"
-    labels:
-      - "dependencies"
-      - "docker-compose"
-    reviewers:
-      - "tsinglinrain"  # 替换为你的GitHub用户名
     
   # GitHub Actions workflow更新
   - package-ecosystem: "github-actions"
