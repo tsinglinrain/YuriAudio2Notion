@@ -51,7 +51,6 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-      day: "1"
       time: "10:00"
     labels:
       - "dependencies"
