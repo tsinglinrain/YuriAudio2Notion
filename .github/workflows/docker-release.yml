@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up QEMU (Multi-Platform Support)
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx (Enhanced Driver)
         uses: docker/setup-buildx-action@v3
