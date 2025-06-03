@@ -13,7 +13,7 @@ import json
 if os.getenv("ENV") != "production":
     load_dotenv()  # 默认加载 .env 文件
     print("当前工作目录:", os.getcwd())
-    print("NOTION_TOKEN =", os.getenv("NOTION_TOKEN"))
+    print("NOTION_TOKEN =", os.getenv("NOTION_TOKEN")[:10] + "..." if os.getenv("NOTION_TOKEN") else "未设置")
 
 class NotionClient:
     def __init__(self, database_id, token, payment_platform):
@@ -73,7 +73,7 @@ class NotionClient:
         description,
         description_sequel,
         publish_date,
-        update_frequency,
+        update_frequency: List[str],
         ori_price,
         author_name,
         up_name,
@@ -100,7 +100,7 @@ class NotionClient:
                     "time_zone": time_zone,  # 时区, 参见官方文档
                 }
             },
-            "更新": {"multi_select": [{"name": update_frequency}]},
+            "更新": {"multi_select": update_frequency},
             "Price": {"number": ori_price},
             "原著": {"select": {"name": author_name}},
             "up主": {"select": {"name": up_name}},
@@ -271,7 +271,7 @@ def main():
     # publish_date = "2024-12-01T14:25:56+08:00"
     publish_date = "2024-12-01T14:25:56Z"
     # "2020-12-08T12:00:00Z”
-    update_frequency = "已完结"
+    update_frequency = [{"name": "已完结"}, {"name": "完结测试"}]
     ori_price = 218
     author_name = "闻人碎语"
 

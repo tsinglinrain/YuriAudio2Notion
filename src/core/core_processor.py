@@ -5,8 +5,9 @@ import os
 import logging
 from typing import List, Dict, Any, Optional, Union
 from urllib.parse import urlparse
-
+import re
 from dotenv import load_dotenv
+import json
 
 from src.clients.fanjiao_client import FanjiaoAPI, FanjiaoCVAPI
 from src.clients.notion_client_cus import NotionClient
@@ -16,6 +17,11 @@ from src.core.descrip_process import DescriptionProcessor
 if os.getenv("ENV") != "production":
     load_dotenv()  # 默认加载 .env 文件
 
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 class FanjiaoProcessor:
     """处理fanjiao链接相关的核心类"""
@@ -40,6 +46,11 @@ class FanjiaoProcessor:
             data = self.fanjiao_api.fetch_album(url)
             data_relevant = self.fanjiao_api.extract_relevant_data(data)
 
+            # 格式化data_relevant中的update_frequency
+            data_relevant["update_frequency"] = self.format_update_frequency(
+                data_relevant.get("update_frequency", "")
+            )
+            print(f"测试:更新频率: {data_relevant['update_frequency']}")
             print(f"测试:专辑名称: {data_relevant['name']}")
 
             # 获取CV相关数据
@@ -70,6 +81,33 @@ class FanjiaoProcessor:
         """
         return list(map(lambda item: {"name": item.get(key, "")}, data))
 
+    @staticmethod
+    def format_update_frequency(update_frequency: str) -> List[str]:
+            """格式化更新频率
+
+            Args:
+                update_frequency: 原始更新频率字符串
+
+            Returns:
+                格式化后的更新频率字符串, 
+                例如 "每周四" -> "每周四更新",
+                    "每周一、周四更新" -> "每周一更新", "每周四更新",
+                    "完结" -> "已完结",
+                    "周更" -> "周更",
+                    "每周三11点" -> "每周三更新",
+                    "阿巴阿巴" -> "阿巴阿巴"
+            """
+            if not update_frequency:
+                return ["未知"]
+            
+            if "完结" in update_frequency:
+                return ["已完结"]
+            
+            week_matches = re.findall(r"周([一二三四五六日])", update_frequency)
+            if week_matches:
+                return [f"每周{day}更新" for day in week_matches]
+            
+            return [update_frequency]
 
 class NotionProcessor:
     """处理Notion相关操作的核心类"""
@@ -121,8 +159,11 @@ class NotionProcessor:
             "+08:00", "Z"
         )  # publish_date = "2024-12-01T14:25:56+08:00" -> "2020-12-08T12:00:00Z"
 
+        # 更新处理
+        update_frequency: List = data_ready.get("update_frequency", "")
+        update_frequency = self.description_processor.format_tag_list(update_frequency)
+        
         # 其他属性
-        update_frequency = data_ready.get("update_frequency", "")
         ori_price = data_ready.get("ori_price", 0)
         author_name = data_ready.get("author_name", "")
 
@@ -219,6 +260,35 @@ def process_url(
         logging.error(f"处理 {url} 失败: {str(e)}")
         return False
 
+def process_url_test(url: str) -> bool:
+    """处理单个URL
+
+    Args:
+        url: fanjiao专辑链接
+
+    Returns:
+        处理是否成功
+    """
+    # try:
+        # 初始化处理器
+    fanjiao_processor = FanjiaoProcessor()
+    notion_processor = NotionProcessor()
+
+    # 获取数据
+    data_ready = fanjiao_processor.acquire_data(url)
+
+    if not data_ready:
+        print(f"处理 {url} 后，内容为空")
+        return False
+    with open("data_ready.json", "w", encoding="utf-8") as f:
+        json.dump(data_ready, f, ensure_ascii=False, indent=4)
+
+    processed_data = notion_processor.prepare_data_for_notion(data_ready)
+    with open("processed_data.json", "w", encoding="utf-8") as f:
+        json.dump(processed_data, f, ensure_ascii=False, indent=4)
+    # except Exception as e:
+    #     logging.error(f"处理 {url} 失败: {str(e)}")
+    return True
 
 def process_url_list(url_list: List[str]) -> Dict[str, int]:
     """处理URL列表
@@ -239,3 +309,36 @@ def process_url_list(url_list: List[str]) -> Dict[str, int]:
             failed_count += 1
 
     return {"success": success_count, "failed": failed_count}
+
+def process_url_list_test(url_list: List[str]) -> Dict[str, int]:
+    """处理URL列表
+
+    Args:
+        url_list: 要处理的URL列表
+
+    Returns:
+        处理结果统计 {"success": 成功数, "failed": 失败数}
+    """
+    success_count = 0
+    failed_count = 0
+
+    for url in url_list:
+        if process_url_test(url):
+            success_count += 1
+        else:
+            failed_count += 1
+
+    return {"success": success_count, "failed": failed_count}
+
+def main():
+    """主函数入口"""
+    # 测试用的URL列表
+    test_urls = [
+        "https://s.rela.me/c/1SqTNu?album_id=111052",
+    ]
+
+    result = process_url_list_test(test_urls)
+    print(f"处理结果: 成功 {result['success']}，失败 {result['failed']}")
+
+if __name__ == "__main__":
+    main()
