@@ -50,8 +50,25 @@ jobs:
           # =====================================================================
           # Example: Translate to Spanish, French, German. Add -y to auto-confirm.
           translate -l "en tw" -y  # <--- MODIFY THIS LINE with your desired languages
+           
+      - name: Check for changes
+        id: check_changes
+        run: |
+          # 检查是否有翻译文件生成
+          if [ -d "translations" ] && [ "$(ls -A translations 2>/dev/null)" ]; then
+            echo "translations_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "translations_exist=false" >> $GITHUB_OUTPUT
+          fi
+          
+          if [ -d "translated_images" ] && [ "$(ls -A translated_images 2>/dev/null)" ]; then
+            echo "images_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "images_exist=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create Pull Request with translations
+        if: steps.check_changes.outputs.translations_exist == 'true' || steps.check_changes.outputs.images_exist == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -71,5 +88,5 @@ jobs:
           labels: translation, automated-pr
           delete-branch: true
           add-paths: |
-            translations/
-            translated_images/
+            ${{ steps.check_changes.outputs.translations_exist == 'true' && 'translations/' || '' }}
+            ${{ steps.check_changes.outputs.images_exist == 'true' && 'translated_images/' || '' }}
