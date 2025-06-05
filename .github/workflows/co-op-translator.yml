@@ -42,7 +42,7 @@ jobs:
         #   AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # OPENAI_ORG_ID: ${{ secrets.OPENAI_ORG_ID }}
-        #   OPENAI_CHAT_MODEL_ID: ${{ secrets.OPENAI_CHAT_MODEL_ID }}
+          OPENAI_CHAT_MODEL_ID: ${{ secrets.OPENAI_CHAT_MODEL_ID }}
         #   OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
         run: |
           # =====================================================================
