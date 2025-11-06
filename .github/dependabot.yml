@@ -12,9 +12,6 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    labels:
-      - "dependencies"
-      - "python"
     assignees:
       - "tsinglinrain"
     open-pull-requests-limit: 5
@@ -26,9 +23,6 @@ updates:
       interval: "weekly"
       day: "tuesday"
       time: "09:00"
-    labels:
-      - "dependencies"
-      - "docker"
     assignees:
       - "tsinglinrain"
     open-pull-requests-limit: 3
@@ -39,9 +33,6 @@ updates:
     schedule:
       interval: "monthly"
       time: "10:00"
-    labels:
-      - "dependencies"
-      - "github-actions"
     assignees:
       - "tsinglinrain"
     open-pull-requests-limit: 2
