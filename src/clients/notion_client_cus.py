@@ -40,12 +40,10 @@ class NotionClient:
                 # children=blocks,  # 不要children
             )
             logging.info("Page created successfully\n上传成功")
-            print("Page created successfully\n上传成功")
         except Exception as e:
             logging.error(
                 f"Failed to create page: {e}\n创建页面失败,自动跳过,请自行检查"
             )
-            print(f"Failed to create page: {e}\n创建页面失败,自动跳过,请自行检查")
 
     def update_page(self, page_id, properties):
         """Update an existing page in the database"""
@@ -56,21 +54,17 @@ class NotionClient:
                 properties=properties,
             )
             logging.info("Page updated successfully\n更新成功")
-            print("Page updated successfully\n更新成功")
         except Exception as e:
             logging.error(f"Failed to update page: {e}\n更新页面失败,请自行检查")
-            print(f"Failed to update page: {e}\n更新页面失败,请自行检查")
 
     def get_page(self, page_id):
         """Retrieve a page from the database"""
         try:
             page = self.client.pages.retrieve(page_id=page_id)
             logging.info("Page retrieved successfully\n获取成功")
-            print("Page retrieved successfully\n获取成功")
             return page
         except Exception as e:
             logging.error(f"Failed to retrieve page: {e}\n获取页面失败,请自行检查")
-            print(f"Failed to retrieve page: {e}\n获取页面失败,请自行检查")
             return None
 
     def _prepare_properties(

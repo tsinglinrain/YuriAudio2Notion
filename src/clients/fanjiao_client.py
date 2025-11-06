@@ -11,33 +11,28 @@ load_dotenv()
 
 
 class FanjiaoSigner:
-    """签名生成器"""
+    """签名生成器，负责生成请求签名"""
 
-    _SALT = None  # 延迟加载
+    _SALT = None
+    _ENV_VAR = "FANJIAO_SALT"
 
     @classmethod
     def get_salt(cls) -> str:
-        """安全获取,优先从环境变量读取"""
-        if not cls._SALT:
-            # 从环境变量读取，不存在则使用开发默认值
-            cls._SALT = os.getenv("FANJIAO_SALT")
-
-            # 生产环境强制校验
-            if os.getenv("ENV") == "production" and not os.getenv("FANJIAO_SALT"):
-                raise RuntimeError("Missing FANJIAO_SALT in production environment")
-
+        if cls._SALT is None:
+            value = os.getenv(cls._ENV_VAR)
+            if not value:
+                raise RuntimeError(f"Missing required env {cls._ENV_VAR}")
+            cls._SALT = value
         return cls._SALT
 
     @classmethod
     def generate(cls, query_params: str) -> str:
-        raw_str = f"{query_params}{cls.get_salt()}"
-        return hashlib.md5(raw_str.encode()).hexdigest()
+        raw_str = f"{query_params}{cls.get_salt()}".encode("utf-8")
+        return hashlib.md5(raw_str).hexdigest()
 
 
 class BaseFanjiaoAPI:
     """API客户端基类，封装通用逻辑"""
-
-    _BASE_URL: str = None  # 由子类指定
 
     def __init__(self):
         self.session = requests.Session()
@@ -45,8 +40,11 @@ class BaseFanjiaoAPI:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
             "Origin": "https://www.rela.me",
         }
+        self.BASE_URL = None
+        self.album_id: str = None
 
-    def _extract_album_id(self, url: str) -> str:
+    @staticmethod
+    def _extract_album_id(url: str) -> str:
         """
         安全解析URL中的album_id参数
         :param url: 包含album_id参数的URL
@@ -67,12 +65,14 @@ class BaseFanjiaoAPI:
         """提取关键数据"""
         raise NotImplementedError
 
-    def _fetch_data(self, album_id: str) -> Dict[str, Any]:
+    def fetch_album(self) -> Dict[str, Any]:
         """执行API请求核心逻辑"""
-        query = self._build_query(album_id)
-        api_url = f"{self._BASE_URL}?{query}"
-        logging.info(f"请求的API URL: {api_url}")
-        
+        if not self.BASE_URL:
+            raise RuntimeError("BASE_URL must be set in __init__")
+
+        query = self._build_query()
+        api_url = f"{self.BASE_URL}?{query}"
+
         headers = {**self.headers, "signature": FanjiaoSigner.generate(query)}
 
         try:
@@ -82,35 +82,21 @@ class BaseFanjiaoAPI:
         except requests.RequestException as e:
             raise RuntimeError(f"API请求失败: {str(e)}") from e
 
-    def fetch_album(self, url: str) -> Dict[str, Any]:
-        """
-        获取专辑数据
-        :param url: 包含album_id参数的短链接
-        :return: 解析后的JSON数据
-        """
-        album_id = self._extract_album_id(url)
-        logging.info(f"提取到的专辑ID: {album_id}")
-        return self._fetch_data(album_id)
-
 
 class FanjiaoAPI(BaseFanjiaoAPI):
     """音频数据API客户端"""
 
-    _BASE_URL = None  # 延迟加载
+    _ENV_VAR = "FANJIAO_BASE_URL"
 
-    @classmethod
-    def get_base_url(cls) -> str:
-        """env方式读取"""
-        if not cls._BASE_URL:
-            cls._BASE_URL = os.getenv("FANJIAO_BASE_URL")
-        return cls._BASE_URL
-
-    def __init__(self):
+    def __init__(self, album_id: str):
         super().__init__()
-        self.get_base_url()
+        self.BASE_URL = os.getenv("FANJIAO_BASE_URL")
+        if not self.BASE_URL:
+            raise RuntimeError(f"Failed to get {self._ENV_VAR} from environment")
+        self.album_id = album_id
 
-    def _build_query(self, album_id: str) -> str:
-        return f"album_id={album_id}&audio_id="
+    def _build_query(self) -> str:
+        return f"album_id={self.album_id}&audio_id="
 
     def extract_relevant_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """提取关键数据"""
@@ -127,21 +113,17 @@ class FanjiaoAPI(BaseFanjiaoAPI):
 class FanjiaoCVAPI(BaseFanjiaoAPI):
     """CV数据API客户端"""
 
-    _BASE_URL = None  # 延迟加载
+    _ENV_VAR = "FANJIAO_CV_BASE_URL"
 
-    @classmethod
-    def get_base_url(cls) -> str:
-        """env方式读取"""
-        if not cls._BASE_URL:
-            cls._BASE_URL = os.getenv("FANJIAO_CV_BASE_URL")
-        return cls._BASE_URL
-
-    def __init__(self):
+    def __init__(self, album_id):
         super().__init__()
-        self.get_base_url()
+        self.BASE_URL = os.getenv("FANJIAO_CV_BASE_URL")
+        if not self.BASE_URL:
+            raise RuntimeError(f"Failed to get {self._ENV_VAR} from environment")
+        self.album_id = album_id
 
-    def _build_query(self, album_id: str) -> str:
-        return f"album_id={album_id}&from=H5"
+    def _build_query(self) -> str:
+        return f"album_id={self.album_id}&from=H5"
 
     def extract_relevant_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         cv_list: List[Dict] = data.get("data", {}).get("cv_list", [])
@@ -188,19 +170,18 @@ def main():
     # ]
     test_urls = ["https://s.rela.me/c/1SqTNu?album_id=110942"]  # 晴天
 
-    fanjiao_api = FanjiaoAPI()
-    fanjiao_cv_api = FanjiaoCVAPI()
-
     for url in test_urls:
         # try:
         album_id = parse_qs(urlparse(url).query)["album_id"][0]
+        fanjiao_api = FanjiaoAPI(album_id)
+        fanjiao_cv_api = FanjiaoCVAPI(album_id)
 
-        data = fanjiao_api.fetch_album(url)
+        data = fanjiao_api.fetch_album()
         data_relevant = fanjiao_api.extract_relevant_data(data)
         save_json(data_relevant, f"data/data_{album_id}_relevant.json")
         print(f"专辑名称: {data_relevant['name']}")
 
-        data_cv = fanjiao_cv_api.fetch_album(url)
+        data_cv = fanjiao_cv_api.fetch_album()
         # save_json(data_cv, f"data/data_{album_id}_cv.json")
         data_cv_relevant = fanjiao_cv_api.extract_relevant_data(data_cv)
         save_json(data_cv_relevant, f"data/data_{album_id}_cv_relevant.json")
