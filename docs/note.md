@@ -181,6 +181,8 @@ http://your-server:5050/webhook-url?api_key=your_secure_key
   - 看了半天，原来是webhook版本的实现思路是更新界面, 所以和`data_source`根本没有关系,
   - 也就是说根本不用改
 
+- 我真的服了，明明什么都没改，怎么docker 镜像拉去之后就是运行不了.....
+
 # Acknowledgement
 
 [zhufree (zhufree)](https://github.com/zhufree)
