@@ -246,4 +246,6 @@ def index():
 
 if __name__ == "__main__":
     # 运行 Flask 应用
-    app.run(debug=True, host="0.0.0.0", port=5050)
+    # 根据环境变量决定是否启用 debug 模式
+    debug_mode = os.getenv("ENV") != "production"
+    app.run(debug=debug_mode, host="0.0.0.0", port=5050)
