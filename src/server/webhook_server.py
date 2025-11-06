@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import sys
+from pathlib import Path
+
+# 将项目根目录添加到 Python 路径
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 from flask import Flask, request, jsonify
 import json  # Optional: For pretty printing JSON
 import requests
