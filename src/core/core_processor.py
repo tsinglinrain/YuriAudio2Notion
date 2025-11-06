@@ -122,7 +122,7 @@ class NotionProcessor:
         Returns:
             tuple (database_id, token)
         """
-        database_id = os.getenv("NOTION_DATABASE_ID")
+        database_id = os.getenv("NOTION_DATA_SOURCE_ID")
         token = os.getenv("NOTION_TOKEN")
         return database_id, token
 

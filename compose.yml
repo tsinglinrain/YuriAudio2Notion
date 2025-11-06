@@ -7,7 +7,7 @@ services:
     environment:
       - ENV=production
       - FLASK_ENV=production
-      - NOTION_DATABASE_ID=133**************
+      - NOTION_DATA_SOURCE_ID=133**************
       - NOTION_TOKEN=ntn_*********
       - FANJIAO_SALT=
       - FANJIAO_BASE_URL=

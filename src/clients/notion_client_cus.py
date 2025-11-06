@@ -16,8 +16,8 @@ if os.getenv("ENV") != "production":
     print("NOTION_TOKEN =", os.getenv("NOTION_TOKEN")[:10] + "..." if os.getenv("NOTION_TOKEN") else "未设置")
 
 class NotionClient:
-    def __init__(self, database_id, token, payment_platform):
-        self.database_id = database_id
+    def __init__(self, data_source_id, token, payment_platform):
+        self.data_source_id = data_source_id
         self.token = token
         self.client: Client = Client(auth=token)
         self.payment_platform = payment_platform
@@ -29,7 +29,7 @@ class NotionClient:
             self.client.pages.create(
                 icon={"type": "emoji", "emoji": "🎧"},  # 非常贴合,堪称完美图标
                 # cover # 也没有需求
-                parent={"database_id": self.database_id},
+                parent={"data_source_id": self.data_source_id},
                 properties=properties,
                 # children=blocks,  # 不要children
             )
@@ -299,10 +299,10 @@ def main():
 
     logging.info(f"Preparing to create a new page in the database...")
 
-    database_id = os.getenv("NOTION_DATABASE_ID")
+    data_source_id = os.getenv("NOTION_DATA_SOURCE_ID")
     token = os.getenv("NOTION_TOKEN")
 
-    notion_client = NotionClient(database_id, token, "fanjiao")
+    notion_client = NotionClient(data_source_id, token, "fanjiao")
     # print(client.users.list())
     notion_client.cre_in_database_paper(
         name,
@@ -364,10 +364,10 @@ def main_update():
 
     logging.info(f"Preparing to create a new page in the database...")
 
-    database_id = os.getenv("NOTION_DATABASE_ID")
+    data_source_id = os.getenv("NOTION_DATA_SOURCE_ID")
     token = os.getenv("NOTION_TOKEN")
 
-    notion_client = NotionClient(database_id, token, "fanjiao")
+    notion_client = NotionClient(data_source_id, token, "fanjiao")
     notion_client.update_in_database_paper(
         page_id,
         name,
@@ -393,10 +393,10 @@ def main_update():
 def page_test():
     """测试函数"""
     page_id = "1e899f72bada802ab959c21dd86be8c3"
-    database_id = os.getenv("NOTION_DATABASE_ID")
+    data_source_id = os.getenv("NOTION_DATA_SOURCE_ID")
     token = os.getenv("NOTION_TOKEN")
 
-    notion_client = NotionClient(database_id, token, "fanjiao")
+    notion_client = NotionClient(data_source_id, token, "fanjiao")
     page = notion_client.get_page(page_id)
     with open("page.json", "w", encoding="utf-8") as f:
         json.dump(page, f, ensure_ascii=False, indent=4)

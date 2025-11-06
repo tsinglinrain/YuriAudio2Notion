@@ -4,7 +4,7 @@
 
 name
 description
-horizontal,废弃
+horizontal, 废弃, 之前是api不支持，现在是太模糊了, 不合适
 publish_date
 update_frequency
 ori_price
@@ -45,47 +45,47 @@ Price
 
 # 完成情况
 
-基本完成, 已经能够完成工作流,
+- [x] 基本完成, 已经能够完成工作流,
 
-但是, 需要将base url隐藏, achieved
+- [x] 但是, 需要将base url隐藏, achieved
 
-需要将类改成可以更新, achieved
+- [x] 需要将类改成可以更新, achieved
 
-Tag其实也可从简介部分分析, 如纯爱, 古风等. achieved
+    Tag其实也可从简介部分分析, 如纯爱, 古风等. achieved
 
-prompt, 对于诸如"全一季现代纯爱广播剧《有趣》""全一季科幻悬疑百合广播剧《离开与你相遇的世界》""现代纯爱广播剧《帮我拍拍》第一季"等字符串，想要提取每一个的tag，如'全一季""现代""纯爱".需要注意的是，每个字符串"广播剧《"前面内容都是未知的,如何提取呢？
+    prompt, 对于诸如"全一季现代纯爱广播剧《有趣》""全一季科幻悬疑百合广播剧《离开与你相遇的世界》""现代纯爱广播剧《帮我拍拍》第一季"等字符串，想要提取每一个的tag，如'全一季""现代""纯爱".需要注意的是，每个字符串"广播剧《"前面内容都是未知的,如何提取呢？
 
-GitHub项目, 中文分词太重, 不合适
-直接取吧. achieved
+- [x] GitHub项目, 中文分词太重, 不合适
+- [x] 直接取吧. achieved
 
-up主也可从简介中提取, achieved
+- [x] up主也可从简介中提取, achieved
 
-注意, `main`函数没有修改, achieved
+- [x] 注意, `main`函数没有修改, achieved
 
-main函数以及调试函数, 大量函数重复, 可以用类封装, achieved
+- [x] main函数以及调试函数, 大量函数重复, 可以用类封装, achieved
 
-正剧的剧集数也可以传入, 抓"正剧", achieved
+- [x] 正剧的剧集数也可以传入, 抓"正剧", achieved
 
-用ts重写一个, 练练手, doing
+- [x] 用ts重写一个, 练练手, doing
 
-webhook, 但是Notion似乎不支持, achieved, 但继续
+- [x] webhook, 但是Notion似乎不支持, achieved, 但继续
 
-docker部署, 上传至Docker Hub, achieved
+- [x] docker部署, 上传至Docker Hub, achieved
 
-网页端开放一个接口, 输入剧集连接就能解析, 这个还是算了, 不做
+- [x] 网页端开放一个接口, 输入剧集连接就能解析, 这个还是算了, 不做
 
-api抓取的, 有一些是`已完结`, `完结`, 最好是`已完结`, achieved
+- [x] api抓取的, 有一些是`已完结`, `完结`, 最好是`已完结`, achieved
 
-每周四几点几点, 每周四更新, 周六更新, 这些全部改成统一格式. 统一格式为`每周一更新`,
+- [x] 每周四几点几点, 每周四更新, 周六更新, 这些全部改成统一格式. 统一格式为`每周一更新`,
 `每周一每周四更新`,需要改成`每周一更新`和`每周四更新`, achieved
 
-具体时间暂时不做抓取, 数据库中创建新的属性, 手动填入
+- [x] 具体时间暂时不做抓取, 数据库中创建新的属性, 手动填入
 
-真是离谱, 这个竟然是上传的时候大家自己填写的
+- [ ] 真是离谱, 这个竟然是上传的时候大家自己填写的
 
-主役和饰演的角色的颜色不一致, 如果能一一对应就好了, 需要查询一下接口
+- [ ] 主役和饰演的角色的颜色不一致, 如果能一一对应就好了, 需要查询一下接口
 
-增添`Album Link`这个属性, achieved
+- [x] 增添`Album Link`这个属性, achieved
 
 # icon获取方法
 
@@ -96,14 +96,14 @@ api抓取的, 有一些是`已完结`, `完结`, 最好是`已完结`, achieved
 
 # webhook的进一步强化
 
-database中设置按钮, 在property中键入url的内容后, 点击按钮即可在当前的数据库中, achieved
+- [x] database中设置按钮, 在property中键入url的内容后, 点击按钮即可在当前的数据库中, achieved
 
-可能需要对兼容性和美观性做进一步的取舍,需要单独添加一个url的property,
+- [x] 可能需要对兼容性和美观性做进一步的取舍, 需要单独添加一个url的property,
 定义为`Upload url`, achieved
 
-对目前代码进行进一步重构, 可以参考之前`rsshub`的写法, achieved
+- [x] 对目前代码进行进一步重构, 可以参考之前`rsshub`的写法, achieved
 
-舍弃再docker中写入环境变量的写法, 改为从当前界面的按钮中获取当前数据据的`database id`, achieved
+- [x] 舍弃再docker中写入环境变量的写法, 改为从当前界面的按钮中获取当前数据据的`database id`, achieved
 
 ```python
 database_id = data["data"]["parent"]["database_id"]
@@ -142,21 +142,44 @@ response = requests.post(
 http://your-server:5050/webhook-url?api_key=your_secure_key
 ```
 
-如果未配置 API_KEY,系统将记录警告日志,但仍会允许请求通过（不推荐在生产环境中这样设置）。
+如果未配置 API_KEY, 系统将记录警告日志, 但仍会允许请求通过 (不推荐在生产环境中这样设置)。
 
 假如这破项目真有人看, 我建议你也加上. 
 
 # post请求的增强
 
-对于notion database的post请求目前还是只能在Notion端执行测试，过于繁琐，应当仿照Notion的post请求格式，自己在本地请求, database achieved, page尚未
+对于notion database的post请求目前还是只能在Notion端执行测试，过于繁琐，应当仿照Notion的post请求格式，自己在本地请求, 
+- [x] database achieved, 
+- [ ] page尚未
 
 # 交流
 
 喜欢百广, 用Notion, 想用Notion整理, 我觉得三个凑齐的人少之又少.
 
+本质上一些api还是抓取出来的, 一方面害怕铁拳, 另一方面不希望被人滥用, 所以如果你看到这里, 请心照不宣.
+
 如果你看到这里, 希望这个小项目能为你带来帮助. 有不正确之处, 欢迎指出, pr.
 
 如果你对代码有些不懂之处, 欢迎提问.
+
+最后感谢一下zhufree老师, 之前在抓取上有不懂的地方, 问了.
+
+
+## 其他碎碎念
+
+- 想做关于cv的细致介绍, 但是这个本身就是繁琐的信息收集。而且现在存在, 如"萌娘百科", 已经有人做的很好了，只是会把所有作品放上去，而非专门的cv。至于漫展等基本微博就有，我也不知道有没有这个必要。我不知道我的意义是什么。
+- 毕设压力好大, 很久没维护这个项目了
+- 今天给这个项目修一修, 主要是Notion API更新了新版本, 需要去维护一下, `database` -> `data_source`
+- 我基本上就是看到有什么新的剧作了, 打开https://baihehub.com, 点进去新剧, 找到`album_id`, 然后填到database里面，然后公式计算, 随后复制网址，再次复制到post_url, 随后点击按钮, 等一会就全部抓取并填充进去了, 好了。
+- 最近《神龛》是真不错, 如果还有饭角年度广播剧评选, 我觉得这个拿第一没问题。然后是《月光找不到》第二，第三难说了。
+- 我现在应该判断传入的是网址还是id, 算了我感觉网址就没什么用
+- 直接id得了
+
+
+## 继续维护
+- [ ] 先data_source, 修改好后commit, 不能一起改, 维持一下干净点的commit, 养成好点的习惯
+  - 看了半天，原来是webhook版本的实现思路是更新界面, 所以和`data_source`根本没有关系,
+  - 也就是说根本不用改
 
 # Acknowledgement
 
