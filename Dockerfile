@@ -14,6 +14,9 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=builder /usr/local /usr/local
 COPY . .
 
+# 确保 __init__.py 文件存在
+RUN touch src/__init__.py src/server/__init__.py src/clients/__init__.py src/core/__init__.py
+
 ENV PATH=/root/.local/bin:$PATH \
     FLASK_ENV=production \
     PYTHONUNBUFFERED=1 \
