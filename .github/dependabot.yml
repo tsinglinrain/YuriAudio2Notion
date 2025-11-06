@@ -15,8 +15,8 @@ updates:
     labels:
       - "dependencies"
       - "python"
-    reviewers:
-      - "tsinglinrain"  # 替换为你的GitHub用户名
+    assignees:
+      - "tsinglinrain"
     open-pull-requests-limit: 5
     
   # Docker依赖更新
@@ -29,8 +29,8 @@ updates:
     labels:
       - "dependencies"
       - "docker"
-    reviewers:
-      - "tsinglinrain"  # 替换为你的GitHub用户名
+    assignees:
+      - "tsinglinrain"
     open-pull-requests-limit: 3
     
   # GitHub Actions workflow更新
@@ -42,6 +42,6 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
-    reviewers:
-      - "tsinglinrain"  # 替换为你的GitHub用户名
+    assignees:
+      - "tsinglinrain"
     open-pull-requests-limit: 2
