@@ -13,9 +13,8 @@ from src.clients.fanjiao_client import FanjiaoAPI, FanjiaoCVAPI
 from src.clients.notion_client_cus import NotionClient
 from src.core.descrip_process import DescriptionProcessor
 
-# 仅本地开发时加载 .env 文件（Docker 环境会跳过）
-if os.getenv("ENV") != "production":
-    load_dotenv()  # 默认加载 .env 文件
+
+load_dotenv()  # 默认加载 .env 文件
 
 # 配置日志
 logging.basicConfig(

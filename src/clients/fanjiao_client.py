@@ -7,9 +7,7 @@ from dotenv import load_dotenv
 import os
 import logging
 
-# 仅本地开发时加载 .env 文件（Docker 环境会跳过）
-if os.getenv("ENV") != "production":
-    load_dotenv()  # 默认加载 .env 文件
+load_dotenv()
 
 
 class FanjiaoSigner:

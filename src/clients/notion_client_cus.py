@@ -16,11 +16,10 @@ import logging
 from pprint import pprint
 import json
 
-# 仅本地开发时加载 .env 文件（Docker 环境会跳过）
-if os.getenv("ENV") != "production":
-    load_dotenv()  # 默认加载 .env 文件
-    print("当前工作目录:", os.getcwd())
-    print("NOTION_TOKEN =", os.getenv("NOTION_TOKEN")[:10] + "..." if os.getenv("NOTION_TOKEN") else "未设置")
+
+load_dotenv()  # 默认加载 .env 文件
+print("当前工作目录:", os.getcwd())
+print("NOTION_TOKEN =", os.getenv("NOTION_TOKEN")[:10] + "..." if os.getenv("NOTION_TOKEN") else "未设置")
 
 class NotionClient:
     def __init__(self, data_source_id, token, payment_platform):

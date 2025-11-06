@@ -21,12 +21,12 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-def process(database_id: str, page_id: str, url: str) -> bool:
+def process(data_source_id: str, page_id: str, url: str) -> bool:
     """
     处理URL并更新特定Notion页面
     
     Args:
-        database_id: Notion数据库ID
+        data_source_id: Notion数据库ID
         page_id: Notion页面ID
         url: 要处理的链接
         
@@ -35,12 +35,12 @@ def process(database_id: str, page_id: str, url: str) -> bool:
     """
     # 记录接收到的参数
     logging.info("-------------------------------------")
-    logging.info(f"读取到database_id: {database_id}")
+    logging.info(f"读取到data_source_id: {data_source_id}")
     logging.info(f"读取到page_id: {page_id}")
     logging.info(f"读取到URL: {url}")
     
     # 使用核心处理函数处理并更新
-    success = process_url(url, database_id, page_id)
+    success = process_url(url, data_source_id, page_id)
     
     if success:
         logging.info(f"成功处理和更新: {url}")
@@ -53,12 +53,12 @@ def process(database_id: str, page_id: str, url: str) -> bool:
 def main():
     """测试函数"""
     # 测试参数
-    database_id = "1b8999f72bada8075915dd602d3685af"
+    data_source_id = "1b8999f72bada8075915dd602d3685af"
     page_id = "1f299f72bada807ebf79c2010f9493d9"
     url = "https://s.rela.me/c/1SqTNu?album_id=110750"
     
     # 测试处理
-    process(database_id, page_id, url)
+    process(data_source_id, page_id, url)
 
 
 if __name__ == "__main__":
