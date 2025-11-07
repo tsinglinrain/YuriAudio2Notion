@@ -24,7 +24,7 @@ def index():
     return "YuriAudio2Notion webhook server is running"
 
 
-@bp.route("/webhook-database", methods=["POST"])
+@bp.route("/webhook-data-source", methods=["POST"])
 @require_api_key
 def webhook_data_source():
     """
@@ -38,7 +38,7 @@ def webhook_data_source():
         logger.warning("Received request without JSON data")
         return jsonify({"status": "error", "message": "Request must be JSON"}), 400
 
-    logger.info("Received Notion webhook-database request")
+    logger.info("Received Notion webhook-data-source request")
 
     try:
         # 从Notion数据中提取URL
@@ -54,11 +54,11 @@ def webhook_data_source():
 
         # 获取页面和数据库信息
         page_id = data["data"]["id"]
-        database_id = data["data"]["parent"]["database_id"]
-        logger.info(f"Page ID: {page_id}, Database ID: {database_id}")
+        data_source_id = data["data"]["parent"]["data_source_id"]
+        logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
 
         # 处理URL
-        processor = AlbumProcessor(database_id=database_id)
+        processor = AlbumProcessor(data_source_id=data_source_id)
         success = processor.process_url(album_url, page_id=page_id)
 
         if not success:
@@ -94,7 +94,7 @@ def webhook_page():
     处理来自Notion页面的webhook请求
     期望在请求头中找到'url'键
     适用于在某个page中设置button，在其中的请求头中填入url，
-    随后会在指定database生成该链接对应的page
+    随后会在指定data_source生成该链接对应的page
     """
     logger.info("Received Notion webhook-page request")
 
@@ -176,9 +176,9 @@ def webhook_url():
             "detail": str(e)
         }), 500
 
-@bp.route("/webhook-database-debug", methods=["POST"])
+@bp.route("/webhook-data-source-debug", methods=["POST"])
 @require_api_key
-def webhook_database_debug():
+def webhook_data_source_debug():
     """
     调试用的webhook端点，打印接收到的Notion数据库数据
     """
@@ -188,8 +188,9 @@ def webhook_database_debug():
         logger.warning("Received debug request without JSON data")
         return jsonify({"status": "error", "message": "Request must be JSON"}), 400
 
-    logger.debug(f"Debug Notion database webhook data: {data}")
-    
+    # 输出为 INFO 级别以便在容器的 stdout 中可见（默认 logger 级别为 INFO）
+    logger.info(f"Notion data source webhook data: {data}")
+
     return jsonify({
         "status": "success",
         "message": "Debug data received",
