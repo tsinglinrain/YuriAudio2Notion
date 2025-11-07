@@ -26,11 +26,11 @@ def index():
 
 @bp.route("/webhook-database", methods=["POST"])
 @require_api_key
-def webhook_database():
+def webhook_data_source():
     """
     处理来自Notion数据库的webhook请求
-    适用于在某个database中专门设置一个空白page，在里面填写url，
-    随后会在指定database生成该链接对应的page
+    适用于在某个data source中专门设置一个空白page，在里面填写url，
+    随后会在指定data source生成该链接对应的page
     """
     data = request.json
 
@@ -175,3 +175,23 @@ def webhook_url():
             "message": "Internal server error",
             "detail": str(e)
         }), 500
+
+@bp.route("/webhook-database-debug", methods=["POST"])
+@require_api_key
+def webhook_database_debug():
+    """
+    调试用的webhook端点，打印接收到的Notion数据库数据
+    """
+    data = request.json
+
+    if data is None:
+        logger.warning("Received debug request without JSON data")
+        return jsonify({"status": "error", "message": "Request must be JSON"}), 400
+
+    logger.debug(f"Debug Notion database webhook data: {data}")
+    
+    return jsonify({
+        "status": "success",
+        "message": "Debug data received",
+        "data": data
+    }), 200
