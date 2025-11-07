@@ -80,7 +80,7 @@ YuriAudio2Notion/
 提供HTTP接口：
 - **middlewares.py**: API密钥验证中间件
 - **routes.py**: 三个webhook端点
-  - `/webhook-database`: 从Notion数据库触发
+  - `/webhook-data_source`: 从Notion数据库触发
   - `/webhook-page`: 从Notion页面触发
   - `/webhook-url`: 直接传入URL
 

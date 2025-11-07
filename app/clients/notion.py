@@ -18,15 +18,15 @@ logger = setup_logger(__name__)
 class NotionClient:
     """Notion API客户端"""
 
-    def __init__(self, database_id: Optional[str] = None, token: Optional[str] = None):
+    def __init__(self, data_source_id: Optional[str] = None, token: Optional[str] = None):
         """
         初始化Notion客户端
 
         Args:
-            database_id: Notion数据库ID，默认使用配置中的值
+            data_source_id: Notion数据库ID，默认使用配置中的值
             token: Notion API Token，默认使用配置中的值
         """
-        self.database_id = database_id or config.NOTION_DATA_SOURCE_ID
+        self.data_source_id = data_source_id or config.NOTION_DATA_SOURCE_ID
         self.token = token or config.NOTION_TOKEN
         self.client = Client(auth=self.token)
 
@@ -40,7 +40,7 @@ class NotionClient:
         try:
             self.client.pages.create(
                 icon={"type": "emoji", "emoji": "🎧"},
-                parent={"database_id": self.database_id},
+                parent={"data_source_id": self.data_source_id},
                 properties=properties,
             )
             logger.info("Page created successfully")

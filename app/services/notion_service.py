@@ -19,14 +19,14 @@ logger = setup_logger(__name__)
 class NotionService:
     """Notion数据服务"""
 
-    def __init__(self, database_id: Optional[str] = None):
+    def __init__(self, data_source_id: Optional[str] = None):
         """
         初始化服务
 
         Args:
-            database_id: Notion数据库ID，默认使用配置中的值
+            data_source_id: Notion数据库ID，默认使用配置中的值
         """
-        self.client = NotionClient(database_id=database_id)
+        self.client = NotionClient(data_source_id=data_source_id)
 
     def upload_album_data(
         self,
