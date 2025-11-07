@@ -25,4 +25,4 @@ USER appuser
 EXPOSE 5050
 HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:5050/ || exit 1
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--workers", "3", "--threads", "2", "--access-logfile", "-", "src.server.webhook_server:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--workers", "3", "--threads", "2", "--access-logfile", "-", "app.main:create_app()"]
