@@ -61,6 +61,39 @@ class AlbumProcessor:
 
         return success
 
+    def process_id(
+        self,
+        album_id: str,
+        page_id: Optional[str] = None
+    ) -> bool:
+        """
+        通过专辑ID处理专辑
+
+        Args:
+            album_id: 专辑ID
+            page_id: 页面ID，如果提供则更新，否则创建
+
+        Returns:
+            是否处理成功
+        """
+        logger.info(f"Processing album ID: {album_id}")
+
+        # 获取数据
+        album_data = self.fanjiao_service.fetch_album_data(album_id)
+        if not album_data:
+            logger.error(f"Failed to fetch data for album ID: {album_id}")
+            return False
+
+        # 上传到Notion
+        success = self.notion_service.upload_album_data(album_data, page_id)
+
+        if success:
+            logger.info(f"Successfully processed: {album_id}")
+        else:
+            logger.error(f"Failed to upload data for: {album_id}")
+
+        return success
+
     def process_url_list(self, url_list: List[str]) -> Dict[str, int]:
         """
         批量处理URL列表

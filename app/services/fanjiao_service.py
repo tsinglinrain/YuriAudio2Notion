@@ -23,20 +23,19 @@ class FanjiaoService:
         """初始化服务"""
         self.album_client = FanjiaoAlbumClient()
         self.cv_client = FanjiaoCVClient()
+        self.album_base_url = "https://s.rela.me/c/1SqTNu?album_id="
 
-    def fetch_album_data(self, url: str) -> Optional[Dict[str, Any]]:
+    def fetch_album_data(self, album_id: Optional[str]) -> Optional[Dict[str, Any]]:
         """
         获取并处理专辑完整数据
 
         Args:
-            url: 专辑URL
+            album_id: 专辑ID
 
         Returns:
             处理后的专辑数据，失败返回None
         """
         try:
-            # 提取专辑ID
-            album_id = BaseFanjiaoClient.extract_album_id(url)
 
             # 获取基础数据
             album_raw = self.album_client.fetch_album(album_id)
@@ -55,14 +54,14 @@ class FanjiaoService:
             result = {
                 **album_data,
                 **cv_data,
-                "album_url": url,
+                "album_url": f"{self.album_base_url}{album_id}",
             }
 
             logger.info(f"Successfully fetched data for album: {album_data.get('name')}")
             return result
 
         except Exception as e:
-            logger.error(f"Failed to fetch album data from {url}: {str(e)}")
+            logger.error(f"Failed to fetch album data from {album_id}: {str(e)}")
             return None
 
     @staticmethod

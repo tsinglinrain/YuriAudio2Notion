@@ -183,6 +183,21 @@ http://your-server:5050/webhook-url?api_key=your_secure_key
 
 - 我真的服了，明明什么都没改，怎么docker 镜像拉去之后就是运行不了.....
 
+就这样吧，感觉差不多了....
+
+还可以继续优化
+
+
+改成获取`FanjiaoAlbumID`, 因为以后拓展的话
+
+不是，怎么漫播的广播剧全部下架了? 想听听雨绵的，直接没了
+
+我写的代码原文就没有`url`, 依赖输入....好吧，感觉没有修改的必要了
+
+改成id，url的处理放到前置
+
+`webhook_data_source`就改了者这个一个，其余懒得改了，真不想改了，反正我也只用这个
+
 # Acknowledgement
 
 [zhufree (zhufree)](https://github.com/zhufree)

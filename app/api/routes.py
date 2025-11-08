@@ -41,15 +41,16 @@ def webhook_data_source():
     logger.info("Received Notion webhook-data-source request")
 
     try:
-        # 从Notion数据中提取URL
-        album_url = data["data"]["properties"]["Upload URL"]["url"]
-        logger.info(f"Extracted URL: {album_url}")
+        # 从Notion数据中提取album id
+        album_id = data["data"]["properties"]["FanjiaoAlbumID"]["number"]
+        album_id = str(album_id) if album_id is not None else ""
+        logger.info(f"Extracted Album ID: {album_id}")
 
-        if not album_url:
-            logger.warning("Album URL is empty")
+        if not album_id:
+            logger.warning("Album ID is empty")
             return jsonify({
                 "status": "warning",
-                "message": "Album Link URL is empty in Notion data"
+                "message": "Album ID is empty in Notion data"
             }), 200
 
         # 获取页面和数据库信息
@@ -59,7 +60,7 @@ def webhook_data_source():
 
         # 处理URL
         processor = AlbumProcessor(data_source_id=data_source_id)
-        success = processor.process_url(album_url, page_id=page_id)
+        success = processor.process_id(album_id, page_id=page_id)
 
         if not success:
             return jsonify({
