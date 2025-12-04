@@ -6,7 +6,6 @@ services:
       - "5050:5050"
     environment:
       - ENV=production
-      - FLASK_ENV=production
       - NOTION_DATA_SOURCE_ID=133**************
       - NOTION_TOKEN=ntn_*********
       - FANJIAO_SALT=
@@ -16,4 +15,4 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    command: gunicorn --bind 0.0.0.0:5050 --workers 3 --threads 2 --timeout 120 --access-logfile - "app.main:create_app()"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 5050 --workers 3 --timeout-keep-alive 120

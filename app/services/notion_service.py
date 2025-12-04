@@ -3,7 +3,7 @@
 
 """
 Notion数据上传服务
-负责将处理好的数据上传到Notion
+负责将处理好的数据上传到Notion（异步版本）
 """
 
 from typing import Dict, Any, Optional
@@ -28,13 +28,13 @@ class NotionService:
         """
         self.client = NotionClient(data_source_id=data_source_id)
 
-    def upload_album_data(
+    async def upload_album_data(
         self,
         album_data: Dict[str, Any],
         page_id: Optional[str] = None
     ) -> bool:
         """
-        将专辑数据上传到Notion
+        将专辑数据上传到Notion（异步）
 
         Args:
             album_data: 专辑数据
@@ -51,7 +51,7 @@ class NotionService:
             properties = NotionClient.build_properties(**processed_data)
 
             # 创建或更新页面
-            self.client.manage_page(properties, page_id)
+            await self.client.manage_page(properties, page_id)
 
             logger.info(f"Successfully uploaded data for: {processed_data['name']}")
             return True

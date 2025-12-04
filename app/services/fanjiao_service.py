@@ -3,10 +3,11 @@
 
 """
 Fanjiao数据获取服务
-负责从Fanjiao获取和处理数据
+负责从Fanjiao获取和处理数据（异步版本）
 """
 
 import re
+import asyncio
 from typing import Dict, Any, List, Optional
 
 from app.clients.fanjiao import FanjiaoAlbumClient, FanjiaoCVClient, BaseFanjiaoClient
@@ -25,9 +26,9 @@ class FanjiaoService:
         self.cv_client = FanjiaoCVClient()
         self.album_base_url = "https://s.rela.me/c/1SqTNu?album_id="
 
-    def fetch_album_data(self, album_id: Optional[str]) -> Optional[Dict[str, Any]]:
+    async def fetch_album_data(self, album_id: Optional[str]) -> Optional[Dict[str, Any]]:
         """
-        获取并处理专辑完整数据
+        获取并处理专辑完整数据（异步）
 
         Args:
             album_id: 专辑ID
@@ -36,9 +37,13 @@ class FanjiaoService:
             处理后的专辑数据，失败返回None
         """
         try:
+            # 并发获取专辑数据和CV数据
+            album_raw, cv_raw = await asyncio.gather(
+                self.album_client.fetch_album(album_id),
+                self.cv_client.fetch_cv_list(album_id)
+            )
 
-            # 获取基础数据
-            album_raw = self.album_client.fetch_album(album_id)
+            # 提取专辑数据
             album_data = self._extract_album_data(album_raw)
 
             # 格式化更新频率
@@ -46,8 +51,7 @@ class FanjiaoService:
                 album_data.get("update_frequency", "")
             )
 
-            # 获取CV数据
-            cv_raw = self.cv_client.fetch_cv_list(album_id)
+            # 提取CV数据
             cv_data = self._extract_cv_data(cv_raw)
 
             # 合并数据
