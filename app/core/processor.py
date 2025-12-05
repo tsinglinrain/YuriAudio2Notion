@@ -111,7 +111,13 @@ class AlbumProcessor:
             return_exceptions=True
         )
 
-        success_count = sum(1 for r in results if r is True)
+        success_count = 0
+        for url, result in zip(url_list, results):
+            if result is True:
+                success_count += 1
+            elif isinstance(result, Exception):
+                logger.error(f"Exception processing {url}: {result}")
+
         failed_count = len(results) - success_count
 
         logger.info(
