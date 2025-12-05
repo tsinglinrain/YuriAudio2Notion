@@ -16,14 +16,30 @@ from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-# 全局 httpx 异步客户端（在应用关闭时需要清理）
-http_client = httpx.AsyncClient(
-    timeout=10.0,
-    headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Origin": "https://www.rela.me",
-    }
-)
+# 延迟初始化的 httpx 异步客户端
+_http_client: httpx.AsyncClient | None = None
+
+
+def get_http_client() -> httpx.AsyncClient:
+    """获取 httpx 异步客户端（延迟初始化）"""
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(
+            timeout=10.0,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Origin": "https://www.rela.me",
+            }
+        )
+    return _http_client
+
+
+async def close_http_client() -> None:
+    """关闭 httpx 异步客户端"""
+    global _http_client
+    if _http_client is not None:
+        await _http_client.aclose()
+        _http_client = None
 
 
 class FanjiaoSigner:
@@ -47,9 +63,10 @@ class FanjiaoSigner:
 class BaseFanjiaoClient:
     """Fanjiao API基础客户端"""
 
-    def __init__(self):
-        """初始化客户端"""
-        self.client = http_client
+    @property
+    def client(self) -> httpx.AsyncClient:
+        """获取 httpx 客户端（延迟初始化）"""
+        return get_http_client()
 
     @staticmethod
     def extract_album_id(url: str) -> str:

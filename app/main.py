@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from app.api.routes import router
-from app.clients.fanjiao import http_client
+from app.clients.fanjiao import close_http_client
 from app.utils.config import config
 from app.utils.logger import setup_logger
 
@@ -23,8 +23,8 @@ async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     logger.info(f"Application initialized in {config.ENV} mode")
     yield
-    # 关闭 httpx 客户端
-    await http_client.aclose()
+    # 关闭 httpx 客户端（如果已创建）
+    await close_http_client()
     logger.info("Application shutdown complete")
 
 
