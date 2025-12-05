@@ -106,7 +106,7 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
 
 
 @router.post("/webhook-page", dependencies=[Depends(verify_api_key)])
-async def webhook_page(url: str = Header(...)) -> WebhookResponse:
+async def webhook_page(url: str | None = Header(None)) -> WebhookResponse:
     """
     处理来自Notion页面的webhook请求
     期望在请求头中找到'url'键
@@ -114,6 +114,14 @@ async def webhook_page(url: str = Header(...)) -> WebhookResponse:
     随后会在指定data_source生成该链接对应的page
     """
     logger.info("Received Notion webhook-page request")
+
+    if not url:
+        logger.error("'url' header not found in request")
+        raise HTTPException(
+            status_code=400,
+            detail="'url' header is missing from the request headers."
+        )
+
     logger.info(f"Found URL in headers: {url}")
 
     try:
