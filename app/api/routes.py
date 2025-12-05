@@ -95,10 +95,9 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
             detail=f"Missing expected key in Notion data: {e}"
         )
 
-    except HTTPException:
-        raise
-
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
         logger.error(f"Unexpected error: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
@@ -133,10 +132,9 @@ async def webhook_page(url: str = Header(...)) -> WebhookResponse:
             message="Webhook received and data processed!"
         )
 
-    except HTTPException:
-        raise
-
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
         logger.error(f"Unexpected error: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
@@ -168,10 +166,9 @@ async def webhook_url(request: WebhookUrlRequest) -> WebhookResponse:
             message="Webhook received and data processed!"
         )
 
-    except HTTPException:
-        raise
-
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
         logger.error(f"Processing failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
