@@ -1,5 +1,5 @@
-requests
+httpx
 python-dotenv
 notion-client
-flask
-gunicorn
+fastapi
+uvicorn[standard]

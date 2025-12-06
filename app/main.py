@@ -2,42 +2,59 @@
 # -*- coding: utf-8 -*-
 
 """
-Flask应用主入口
+FastAPI应用主入口
 启动webhook服务器
 """
 
-from flask import Flask
-from app.api.routes import bp
+import uvicorn
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+from app.api.routes import router
+from app.clients.fanjiao import close_http_client
 from app.utils.config import config
 from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
-def create_app():
-    """创建并配置Flask应用"""
-    app = Flask(__name__)
-
-    # 注册蓝图
-    app.register_blueprint(bp)
-
-    # 日志配置
-    if not config.DEBUG:
-        app.logger.setLevel("INFO")
-
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期管理"""
     logger.info(f"Application initialized in {config.ENV} mode")
+    yield
+    # 关闭 httpx 客户端（如果已创建）
+    await close_http_client()
+    logger.info("Application shutdown complete")
+
+
+def create_app() -> FastAPI:
+    """创建并配置FastAPI应用"""
+    app = FastAPI(
+        title="YuriAudio2Notion",
+        description="Fanjiao to Notion webhook server",
+        version="2.0.0",
+        lifespan=lifespan,
+    )
+
+    # 注册路由
+    app.include_router(router)
+
     return app
+
+
+# 创建应用实例
+app = create_app()
 
 
 def main():
     """主函数"""
-    app = create_app()
-
     logger.info(f"Starting server on {config.HOST}:{config.PORT}")
-    app.run(
-        debug=config.DEBUG,
+    uvicorn.run(
+        "app.main:app",
         host=config.HOST,
-        port=config.PORT
+        port=config.PORT,
+        reload=config.DEBUG,
     )
 
 

@@ -6,91 +6,107 @@ API路由定义
 包含所有webhook端点
 """
 
-from flask import Blueprint, request, jsonify
+from typing import Any
+from fastapi import APIRouter, Header, Depends, HTTPException
+from pydantic import BaseModel
 
 from app.core.processor import AlbumProcessor
-from app.api.middlewares import require_api_key
+from app.api.middlewares import verify_api_key
 from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-# 创建蓝图
-bp = Blueprint('api', __name__)
+# 创建路由器
+router = APIRouter()
 
 
-@bp.route("/")
-def index():
+# Pydantic 模型定义
+class WebhookUrlRequest(BaseModel):
+    """URL webhook请求模型"""
+    url: str
+
+
+class WebhookDataSourceRequest(BaseModel):
+    """Notion数据源webhook请求模型"""
+    data: dict[str, Any]
+
+
+class WebhookResponse(BaseModel):
+    """Webhook响应模型"""
+    status: str
+    message: str
+    data: dict[str, Any] | None = None
+    url: str | None = None
+    detail: str | None = None
+
+
+@router.get("/")
+async def index() -> str:
     """健康检查端点"""
     return "YuriAudio2Notion webhook server is running"
 
 
-@bp.route("/webhook-data-source", methods=["POST"])
-@require_api_key
-def webhook_data_source():
+@router.post("/webhook-data-source", dependencies=[Depends(verify_api_key)])
+async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookResponse:
     """
     处理来自Notion数据库的webhook请求
     适用于在某个data source中专门设置一个空白page，在里面填写url，
     随后会在指定data source生成该链接对应的page
     """
-    data = request.json
-
-    if data is None:
-        logger.warning("Received request without JSON data")
-        return jsonify({"status": "error", "message": "Request must be JSON"}), 400
-
     logger.info("Received Notion webhook-data-source request")
 
     try:
         # 从Notion数据中提取album id
-        album_id = data["data"]["properties"]["FanjiaoAlbumID"]["number"]
+        album_id = request.data["properties"]["FanjiaoAlbumID"]["number"]
         album_id = str(album_id) if album_id is not None else ""
         logger.info(f"Extracted Album ID: {album_id}")
 
         if not album_id:
             logger.warning("Album ID is empty")
-            return jsonify({
-                "status": "warning",
-                "message": "Album ID is empty in Notion data"
-            }), 200
+            return WebhookResponse(
+                status="warning",
+                message="Album ID is empty in Notion data"
+            )
 
         # 获取页面和数据库信息
-        page_id = data["data"]["id"]
-        data_source_id = data["data"]["parent"]["data_source_id"]
+        page_id = request.data["id"]
+        data_source_id = request.data["parent"]["data_source_id"]
         logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
 
         # 处理URL
         processor = AlbumProcessor(data_source_id=data_source_id)
-        success = processor.process_id(album_id, page_id=page_id)
+        success = await processor.process_id(album_id, page_id=page_id)
 
         if not success:
-            return jsonify({
-                "status": "error",
-                "message": "Failed to process album data"
-            }), 500
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to process album data"
+            )
 
-        return jsonify({
-            "status": "success",
-            "message": "Webhook received and data processed!"
-        }), 200
+        return WebhookResponse(
+            status="success",
+            message="Webhook received and data processed!"
+        )
 
     except KeyError as e:
         logger.error(f"Missing key in Notion data: {e}")
-        return jsonify({
-            "status": "error",
-            "message": f"Missing expected key in Notion data: {e}"
-        }), 400
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing expected key in Notion data: {e}"
+        )
 
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
         logger.error(f"Unexpected error: {e}", exc_info=True)
-        return jsonify({
-            "status": "error",
-            "message": f"An unexpected error occurred: {e}"
-        }), 500
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {e}"
+        )
 
 
-@bp.route("/webhook-page", methods=["POST"])
-@require_api_key
-def webhook_page():
+@router.post("/webhook-page", dependencies=[Depends(verify_api_key)])
+async def webhook_page(url: str | None = Header(None)) -> WebhookResponse:
     """
     处理来自Notion页面的webhook请求
     期望在请求头中找到'url'键
@@ -99,101 +115,85 @@ def webhook_page():
     """
     logger.info("Received Notion webhook-page request")
 
-    # 从请求头中获取URL
-    album_url = request.headers.get("url")
-
-    if not album_url:
+    if not url:
         logger.error("'url' header not found in request")
-        return jsonify({
-            "status": "error",
-            "message": "'url' header is missing from the request headers."
-        }), 400
+        raise HTTPException(
+            status_code=400,
+            detail="'url' header is missing from the request headers."
+        )
 
-    logger.info(f"Found URL in headers: {album_url}")
+    logger.info(f"Found URL in headers: {url}")
 
     try:
         # 处理URL
         processor = AlbumProcessor()
-        success = processor.process_url(album_url)
+        success = await processor.process_url(url)
 
         if not success:
-            return jsonify({
-                "status": "error",
-                "message": "Failed to process album data"
-            }), 500
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to process album data"
+            )
 
-        return jsonify({
-            "status": "success",
-            "message": "Webhook received and data processed!"
-        }), 200
+        return WebhookResponse(
+            status="success",
+            message="Webhook received and data processed!"
+        )
 
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
         logger.error(f"Unexpected error: {e}", exc_info=True)
-        return jsonify({
-            "status": "error",
-            "message": f"An unexpected error occurred: {e}"
-        }), 500
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {e}"
+        )
 
 
-@bp.route("/webhook-url", methods=["POST"])
-@require_api_key
-def webhook_url():
+@router.post("/webhook-url", dependencies=[Depends(verify_api_key)])
+async def webhook_url(request: WebhookUrlRequest) -> WebhookResponse:
     """
     处理直接传入URL的webhook请求
     需要在请求体中提供url参数
     """
-    # 参数校验
-    if not request.json or "url" not in request.json:
-        return jsonify({
-            "status": "error",
-            "message": "Missing url parameter"
-        }), 400
-
-    url = request.json["url"]
-    logger.info(f"Received webhook-url request for: {url}")
+    logger.info(f"Received webhook-url request for: {request.url}")
 
     try:
         # 处理URL
         processor = AlbumProcessor()
-        success = processor.process_url(url)
+        success = await processor.process_url(request.url)
 
         if not success:
-            return jsonify({
-                "status": "error",
-                "message": "Failed to process album data",
-                "url": url
-            }), 500
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to process album data"
+            )
 
-        return jsonify({
-            "status": "success",
-            "message": "Webhook received and data processed!"
-        }), 200
+        return WebhookResponse(
+            status="success",
+            message="Webhook received and data processed!"
+        )
 
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
         logger.error(f"Processing failed: {str(e)}", exc_info=True)
-        return jsonify({
-            "status": "error",
-            "message": "Internal server error",
-            "detail": str(e)
-        }), 500
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
-@bp.route("/webhook-data-source-debug", methods=["POST"])
-@require_api_key
-def webhook_data_source_debug():
+
+@router.post("/webhook-data-source-debug", dependencies=[Depends(verify_api_key)])
+async def webhook_data_source_debug(request: WebhookDataSourceRequest) -> WebhookResponse:
     """
     调试用的webhook端点，打印接收到的Notion数据库数据
     """
-    data = request.json
-
-    if data is None:
-        logger.warning("Received debug request without JSON data")
-        return jsonify({"status": "error", "message": "Request must be JSON"}), 400
-
     # 输出为 INFO 级别以便在容器的 stdout 中可见（默认 logger 级别为 INFO）
-    logger.info(f"Notion data source webhook data: {data}")
+    logger.info(f"Notion data source webhook data: {request.data}")
 
-    return jsonify({
-        "status": "success",
-        "message": "Debug data received",
-        "data": data
-    }), 200
+    return WebhookResponse(
+        status="success",
+        message="Debug data received",
+        data=request.data
+    )

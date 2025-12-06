@@ -3,9 +3,10 @@
 
 """
 核心处理器
-协调各个服务完成完整的处理流程
+协调各个服务完成完整的处理流程（异步版本）
 """
 
+import asyncio
 from typing import List, Dict, Optional
 
 from app.services.fanjiao_service import FanjiaoService
@@ -28,13 +29,13 @@ class AlbumProcessor:
         self.fanjiao_service = FanjiaoService()
         self.notion_service = NotionService(data_source_id=data_source_id)
 
-    def process_url(
+    async def process_url(
         self,
         url: str,
         page_id: Optional[str] = None
     ) -> bool:
         """
-        处理单个专辑URL
+        处理单个专辑URL（异步）
 
         Args:
             url: 专辑URL
@@ -46,13 +47,13 @@ class AlbumProcessor:
         logger.info(f"Processing URL: {url}")
 
         # 获取数据
-        album_data = self.fanjiao_service.fetch_album_data(url)
+        album_data = await self.fanjiao_service.fetch_album_data(url)
         if not album_data:
             logger.error(f"Failed to fetch data for URL: {url}")
             return False
 
         # 上传到Notion
-        success = self.notion_service.upload_album_data(album_data, page_id)
+        success = await self.notion_service.upload_album_data(album_data, page_id)
 
         if success:
             logger.info(f"Successfully processed: {url}")
@@ -61,13 +62,13 @@ class AlbumProcessor:
 
         return success
 
-    def process_id(
+    async def process_id(
         self,
         album_id: str,
         page_id: Optional[str] = None
     ) -> bool:
         """
-        通过专辑ID处理专辑
+        通过专辑ID处理专辑（异步）
 
         Args:
             album_id: 专辑ID
@@ -79,13 +80,13 @@ class AlbumProcessor:
         logger.info(f"Processing album ID: {album_id}")
 
         # 获取数据
-        album_data = self.fanjiao_service.fetch_album_data(album_id)
+        album_data = await self.fanjiao_service.fetch_album_data(album_id)
         if not album_data:
             logger.error(f"Failed to fetch data for album ID: {album_id}")
             return False
 
         # 上传到Notion
-        success = self.notion_service.upload_album_data(album_data, page_id)
+        success = await self.notion_service.upload_album_data(album_data, page_id)
 
         if success:
             logger.info(f"Successfully processed: {album_id}")
@@ -94,9 +95,9 @@ class AlbumProcessor:
 
         return success
 
-    def process_url_list(self, url_list: List[str]) -> Dict[str, int]:
+    async def process_url_list(self, url_list: List[str]) -> Dict[str, int]:
         """
-        批量处理URL列表
+        批量处理URL列表（异步）
 
         Args:
             url_list: URL列表
@@ -104,14 +105,20 @@ class AlbumProcessor:
         Returns:
             处理结果统计 {"success": 成功数, "failed": 失败数}
         """
-        success_count = 0
-        failed_count = 0
+        # 并发处理所有URL
+        results = await asyncio.gather(
+            *[self.process_url(url) for url in url_list],
+            return_exceptions=True
+        )
 
-        for url in url_list:
-            if self.process_url(url):
+        success_count = 0
+        for url, result in zip(url_list, results):
+            if result is True:
                 success_count += 1
-            else:
-                failed_count += 1
+            elif isinstance(result, Exception):
+                logger.error(f"Exception processing {url}: {result}")
+
+        failed_count = len(results) - success_count
 
         logger.info(
             f"Batch processing complete: {success_count} succeeded, {failed_count} failed"

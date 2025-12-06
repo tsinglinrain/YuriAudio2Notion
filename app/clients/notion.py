@@ -3,11 +3,11 @@
 
 """
 Notion API客户端
-负责与Notion API进行交互
+负责与Notion API进行交互（异步版本）
 """
 
 from typing import Dict, Any, List, Optional
-from notion_client import Client
+from notion_client import AsyncClient
 
 from app.utils.config import config
 from app.utils.logger import setup_logger
@@ -16,7 +16,7 @@ logger = setup_logger(__name__)
 
 
 class NotionClient:
-    """Notion API客户端"""
+    """Notion API异步客户端"""
 
     def __init__(self, data_source_id: Optional[str] = None, token: Optional[str] = None):
         """
@@ -28,9 +28,9 @@ class NotionClient:
         """
         self.data_source_id = data_source_id or config.NOTION_DATA_SOURCE_ID
         self.token = token or config.NOTION_TOKEN
-        self.client = Client(auth=self.token)
+        self.client = AsyncClient(auth=self.token)
 
-    def create_page(self, properties: Dict[str, Any]) -> None:
+    async def create_page(self, properties: Dict[str, Any]) -> None:
         """
         在数据库中创建新页面
 
@@ -38,7 +38,7 @@ class NotionClient:
             properties: 页面属性
         """
         try:
-            self.client.pages.create(
+            await self.client.pages.create(
                 icon={"type": "emoji", "emoji": "🎧"},
                 parent={"data_source_id": self.data_source_id},
                 properties=properties,
@@ -48,7 +48,7 @@ class NotionClient:
             logger.error(f"Failed to create page: {e}")
             raise
 
-    def update_page(self, page_id: str, properties: Dict[str, Any]) -> None:
+    async def update_page(self, page_id: str, properties: Dict[str, Any]) -> None:
         """
         更新数据库中的页面
 
@@ -57,7 +57,7 @@ class NotionClient:
             properties: 页面属性
         """
         try:
-            self.client.pages.update(
+            await self.client.pages.update(
                 icon={"type": "emoji", "emoji": "🎧"},
                 page_id=page_id,
                 properties=properties,
@@ -67,7 +67,7 @@ class NotionClient:
             logger.error(f"Failed to update page: {e}")
             raise
 
-    def get_page(self, page_id: str) -> Optional[Dict[str, Any]]:
+    async def get_page(self, page_id: str) -> Optional[Dict[str, Any]]:
         """
         获取页面信息
 
@@ -78,14 +78,14 @@ class NotionClient:
             页面数据，失败返回None
         """
         try:
-            page = self.client.pages.retrieve(page_id=page_id)
+            page = await self.client.pages.retrieve(page_id=page_id)
             logger.info("Page retrieved successfully")
             return page
         except Exception as e:
             logger.error(f"Failed to retrieve page: {e}")
             return None
 
-    def manage_page(
+    async def manage_page(
         self, properties: Dict[str, Any], page_id: Optional[str] = None
     ) -> None:
         """
@@ -96,9 +96,9 @@ class NotionClient:
             page_id: 页面ID，如果提供则更新，否则创建
         """
         if page_id:
-            self.update_page(page_id, properties)
+            await self.update_page(page_id, properties)
         else:
-            self.create_page(properties)
+            await self.create_page(properties)
 
     @staticmethod
     def build_properties(
