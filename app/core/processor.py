@@ -47,20 +47,8 @@ class AlbumProcessor:
         logger.info(f"Processing URL: {url}")
 
         # 获取数据
-        album_data = await self.fanjiao_service.fetch_album_data(url)
-        if not album_data:
-            logger.error(f"Failed to fetch data for URL: {url}")
-            return False
-
-        # 上传到Notion
-        success = await self.notion_service.upload_album_data(album_data, page_id)
-
-        if success:
-            logger.info(f"Successfully processed: {url}")
-        else:
-            logger.error(f"Failed to upload data for: {url}")
-
-        return success
+        album_id = url.split("album_id=")[-1]
+        return await self.process_id(album_id, page_id)
 
     async def process_id(
         self,

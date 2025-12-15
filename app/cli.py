@@ -6,13 +6,15 @@
 用于本地批处理URL列表
 """
 
+import asyncio
+
 from app.core.processor import AlbumProcessor
 from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
-def main():
+async def main():
     """
     主函数 - 从文件读取URL列表并处理
     默认读取waiting_up_private.txt文件
@@ -38,7 +40,7 @@ def main():
 
     # 处理URL列表
     processor = AlbumProcessor()
-    result = processor.process_url_list(url_list)
+    result = await processor.process_url_list(url_list)
 
     # 输出结果
     logger.info(
@@ -47,4 +49,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
