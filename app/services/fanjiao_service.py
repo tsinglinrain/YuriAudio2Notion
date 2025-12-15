@@ -83,10 +83,13 @@ class FanjiaoService:
         return {
             "name": data.get("name", ""),
             "description": data.get("description", ""),
+            "cover": data.get("cover", ""),
             "publish_date": data.get("publish_date", ""),
             "update_frequency": data.get("update_frequency", ""),
+            "play": data.get("play", 0),
             "ori_price": data.get("ori_price", 0),
             "author_name": data.get("author_name", ""),
+            "up_name": data.get("up_name", ""),
         }
 
     @staticmethod

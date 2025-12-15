@@ -74,12 +74,12 @@ class NotionService:
         album_link = album_data.get("album_url", "")
         name = album_data.get("name", "")
         description = album_data.get("description", "")
+        up_name = album_data.get("up_name", "")
 
         # 解析描述
         parser = DescriptionParser(description)
         processed_description = parser.main_description
         description_sequel = parser.additional_info
-        up_name = parser.up_name
         tags = DescriptionParser.format_to_list(parser.tags)
         episode_count = parser.episode_count
 
