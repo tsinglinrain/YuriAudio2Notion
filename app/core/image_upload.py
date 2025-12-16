@@ -18,29 +18,42 @@ logger = setup_logger(__name__)
 
 class CoverUploader:
     """封面文件上传，生成file_upload_id"""
-    
+
     def __init__(self, image_url: str, image_name: str, token: str = None):
         self.token = token or config.NOTION_TOKEN
         self.client = AsyncClient(auth=self.token)
         self.image_url = image_url
         self.image_name = image_name
+    
+    async def __aenter__(self):
+        return self
+    
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.client.close()
 
     async def _detect_image_format(self) -> str:
-        '''Detect the image format by reading the magic number from the image URL.'''
+        """Detect the image format by reading the magic number from the image URL."""
         MAGIC_NUMBERS = {
-            b'\x89PNG\r\n\x1a\n': 'png',
-            b'\xff\xd8\xff': 'jpg',
+            b"\x89PNG\r\n\x1a\n": "png",
+            b"\xff\xd8\xff": "jpg",
         }
         async with httpx.AsyncClient(timeout=10.0) as client:
             async with client.stream("GET", self.image_url) as resp:
-                resp.raise_for_status()
-                # 使用 aiter_bytes 读取前8个字节
-                header = b''
-                async for chunk in resp.aiter_bytes():
-                    header += chunk
-                    if len(header) >= 8:
-                        header = header[:8]
-                        break
+                try:
+                    resp.raise_for_status()
+                except httpx.HTTPStatusError as e:
+                    logger.error(
+                        f"Failed to fetch image from URL {self.image_url} with status code {resp.status_code}: {e}"
+                    )
+                    raise Exception(
+                        f"Failed to fetch image from URL {self.image_url} with status code {resp.status_code}"
+                    ) from e
+
+                # 使用 aiter_bytes 读取前8个字节, 指定 chunk_size=8, 第一个 chunk 就足够
+                header = b""
+                async for chunk in resp.aiter_bytes(chunk_size=8):
+                    header = chunk[:8]
+                    break
 
         for magic, fmt in MAGIC_NUMBERS.items():
             if header.startswith(magic):
@@ -62,7 +75,9 @@ class CoverUploader:
         start_time = time.monotonic()
 
         while time.monotonic() - start_time < max_wait_time:
-            upload_status = await self.client.file_uploads.retrieve(file_upload_id=file_upload_id)
+            upload_status = await self.client.file_uploads.retrieve(
+                file_upload_id=file_upload_id
+            )
             status = upload_status["status"]
 
             logger.info(f"Current status: {status}")
@@ -72,35 +87,38 @@ class CoverUploader:
                 return
 
             elif status == "failed":
-                error_msg = "File upload failed"
+                error_msg = f"File upload failed for '{self.image_name}'"
                 if "file_import_result" in upload_status:
                     import_result = upload_status["file_import_result"]
                     if import_result.get("type") == "error" and "error" in import_result:
                         error_detail = import_result["error"]
                         error_msg += f": {error_detail.get('message', 'Unknown error')}"
+                error_msg += f" (URL: {self.image_url})"
                 raise Exception(error_msg)
 
             elif status == "pending":
-                logger.debug(f"File is processing, retrying in {poll_interval} seconds...")
+                logger.debug(
+                    f"File is processing, retrying in {poll_interval} seconds..."
+                )
                 await asyncio.sleep(poll_interval)
 
             else:
                 logger.warning(f"Unknown status: {status}, continuing to wait...")
                 await asyncio.sleep(poll_interval)
 
-        raise TimeoutError(f"File upload timed out ({max_wait_time} seconds)")
+        raise TimeoutError(f"File upload timed out for {self.image_name} ({self.image_url}) after {max_wait_time} seconds")
 
     async def image_upload(self) -> str:
         """
         上传图片到Notion
-        
+
         Returns:
             file_upload_id: 上传成功后的文件ID
         """
         image_name_ext = await self._detect_image_format()
-        self.image_name_all = f"{self.image_name}.{image_name_ext}.{image_name_ext}"    # 额外添加扩展名以保证从Notion下载时格式正确，实际完全没用
+        self.image_name_all = f"{self.image_name}.{image_name_ext}.{image_name_ext}"  # 额外添加扩展名以保证从Notion下载时格式正确，实际完全没用
         logger.info(f"Uploading image: {self.image_name_all}")
-        
+
         # 创建文件上传
         response = await self.client.file_uploads.create(
             mode="external_url",
@@ -112,5 +130,5 @@ class CoverUploader:
 
         # Wait for file upload to complete
         await self._wait_for_upload_completion(file_upload_id)
-        
+
         return file_upload_id
