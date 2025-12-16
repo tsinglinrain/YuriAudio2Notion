@@ -8,6 +8,7 @@ external图片链接上传
 
 import asyncio
 import time
+import httpx
 from notion_client import AsyncClient
 from app.utils.config import config
 from app.utils.logger import setup_logger
@@ -23,6 +24,29 @@ class CoverUploader:
         self.client = AsyncClient(auth=self.token)
         self.image_url = image_url
         self.image_name = image_name
+
+    async def _detect_image_format(self) -> str:
+        '''Detect the image format by reading the magic number from the image URL.'''
+        MAGIC_NUMBERS = {
+            b'\x89PNG\r\n\x1a\n': 'png',
+            b'\xff\xd8\xff': 'jpg',
+        }
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            async with client.stream("GET", self.image_url) as resp:
+                resp.raise_for_status()
+                # 使用 aiter_bytes 读取前8个字节
+                header = b''
+                async for chunk in resp.aiter_bytes():
+                    header += chunk
+                    if len(header) >= 8:
+                        header = header[:8]
+                        break
+
+        for magic, fmt in MAGIC_NUMBERS.items():
+            if header.startswith(magic):
+                return fmt
+
+        return "png"  # Default to png if unknown
 
     async def _wait_for_upload_completion(
         self, file_upload_id: str, poll_interval: int = 5, max_wait_time: int = 300
@@ -73,12 +97,14 @@ class CoverUploader:
         Returns:
             file_upload_id: 上传成功后的文件ID
         """
-        logger.info(f"Uploading image: {self.image_name}")
+        image_name_ext = await self._detect_image_format()
+        self.image_name_all = f"{self.image_name}.{image_name_ext}.{image_name_ext}"    # 额外添加扩展名以保证从Notion下载时格式正确，实际完全没用
+        logger.info(f"Uploading image: {self.image_name_all}")
         
         # 创建文件上传
         response = await self.client.file_uploads.create(
             mode="external_url",
-            filename=self.image_name,
+            filename=self.image_name_all,
             external_url=self.image_url,
         )
         file_upload_id = response["id"]

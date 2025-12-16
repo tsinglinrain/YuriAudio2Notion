@@ -79,7 +79,8 @@ class NotionService:
 
         # cover上传
         cover_url = album_data.get("cover", "")
-        cover_uploader = CoverUploader(image_url=cover_url, image_name=f"{name}.png")
+        cover_url = cover_url.split('?')[0] # 获取封面 URL 并去除参数
+        cover_uploader = CoverUploader(image_url=cover_url, image_name=name)
         cover_file_id = await cover_uploader.image_upload()
 
         # 解析描述
