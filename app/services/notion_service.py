@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional
 
 from app.clients.notion import NotionClient
 from app.core.description_parser import DescriptionParser
+from app.core.image_upload import CoverUploader
 from app.services.fanjiao_service import FanjiaoService
 from app.utils.logger import setup_logger
 
@@ -45,7 +46,7 @@ class NotionService:
         """
         try:
             # 准备数据
-            processed_data = self._prepare_data(album_data)
+            processed_data = await self._prepare_data(album_data)
 
             # 构建属性
             properties = NotionClient.build_properties(**processed_data)
@@ -60,9 +61,9 @@ class NotionService:
             logger.error(f"Failed to upload data: {str(e)}")
             return False
 
-    def _prepare_data(self, album_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _prepare_data(self, album_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        将原始数据处理成Notion需要的格式
+        将原始数据处理成Notion需要的格式（异步）
 
         Args:
             album_data: 从Fanjiao获取的原始数据
@@ -75,6 +76,12 @@ class NotionService:
         name = album_data.get("name", "")
         description = album_data.get("description", "")
         up_name = album_data.get("up_name", "")
+
+        # cover上传
+        cover_url = album_data.get("cover", "")
+        cover_url = cover_url.split('?')[0] # 获取封面 URL 并去除参数
+        async with CoverUploader(image_url=cover_url, image_name=name) as cover_uploader:
+            cover_file_id = await cover_uploader.image_upload()
 
         # 解析描述
         parser = DescriptionParser(description)
@@ -112,6 +119,7 @@ class NotionService:
 
         return {
             "name": name,
+            "cover": cover_file_id,
             "description": processed_description,
             "description_sequel": description_sequel,
             "publish_date": publish_date,

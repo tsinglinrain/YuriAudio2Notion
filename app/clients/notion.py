@@ -103,6 +103,7 @@ class NotionClient:
     @staticmethod
     def build_properties(
         name: str,
+        cover: str,
         description: str,
         description_sequel: str,
         publish_date: str,
@@ -127,6 +128,7 @@ class NotionClient:
 
         Args:
             name: 专辑名称
+            cover: 封面海报file_upload_id
             description: 简介
             description_sequel: 简介续
             publish_date: 发布日期
@@ -151,6 +153,7 @@ class NotionClient:
         """
         return {
             "Name": {"title": [{"text": {"content": name}}]},
+            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]},
             "简介": {"rich_text": [{"text": {"content": description}}]},
             "简介续": {"rich_text": [{"text": {"content": description_sequel}}]},
             "Publish Date": {
