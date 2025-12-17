@@ -1,0 +1,49 @@
+{
+  "source": {
+    "type": "automation",
+    "automation_id": "1c499f72-bada-80b4-ba9d-004d5168e792",
+    "action_id": "1c499f72-bada-808d-909f-005ae889136d",
+    "event_id": "25d55133-b2b4-4821-b87c-068f90d7fc2e",
+    "user_id": "e3acda97-15e8-4883-a7c8-07141d9ef043",
+    "attempt": 1
+  },
+  "data": {
+    "object": "page",
+    "id": "2cb99f72bada80f1937bf70fa3d8b715",
+    "created_time": "2025-11-07T11:25:00.000Z",
+    "last_edited_time": "2025-11-07T11:36:00.000Z",
+    "created_by": {
+      "object": "user",
+      "id": "e3acda97-15e8-4883-a7c8-07141d9ef043"
+    },
+    "last_edited_by": {
+      "object": "user",
+      "id": "e3acda97-15e8-4883-a7c8-07141d9ef043"
+    },
+    "cover": null,
+    "icon": null,
+    "parent": {
+      "type": "data_source_id",
+      "data_source_id": "1b899f72-bada-802f-b563-000bf5c26e1c",
+      "database_id": "1b899f72-bada-80e0-8c7c-d639f1df85af"
+    },
+    "archived": false,
+    "in_trash": false,
+    "is_locked": false,
+    "properties": {
+      "Upload URL": {
+        "id": "fk_K",
+        "type": "url",
+        "url": "https://s.rela.me/c/1SqTNu?album_id=110750"
+      },
+      "FanjiaoAlbumID": {
+        "id": "zwGi",
+        "type": "number",
+        "number": 110750
+      }
+    },
+    "url": "https://www.notion.so/2a499f72bada8069beaae0d2608ecab9",
+    "public_url": null,
+    "request_id": "0b7bf57b-d26d-4378-81b7-ac0f36f8f945"
+  }
+}
