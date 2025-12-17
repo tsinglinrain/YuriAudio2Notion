@@ -6,6 +6,7 @@
 """
 
 import os
+from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
 
@@ -52,6 +53,11 @@ class Config:
         if not value:
             raise RuntimeError("Missing required env FANJIAO_CV_BASE_URL")
         return value
+
+    @property
+    def DATA_DIR(self) -> str:
+        """cache data directory"""
+        return os.path.join(".", "app", "data_cache")
 
     # Notion 配置
     @property

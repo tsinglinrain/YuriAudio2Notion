@@ -4,14 +4,17 @@
 """
 external图片链接上传
 负责将外部图片URL上传到Notion，生成file_upload_id
+支持缓存机制避免重复上传
 """
 
 import asyncio
 import time
 import httpx
+from typing import Optional
 from notion_client import AsyncClient
 from app.utils.config import config
 from app.utils.logger import setup_logger
+from app.utils.cache import cover_cache
 
 logger = setup_logger(__name__)
 
@@ -20,12 +23,19 @@ class CoverUploader:
     """封面文件上传，生成file_upload_id"""
 
     def __init__(self, image_url: str, image_name: str, token: str = None):
+        """同步初始化"""
         self.token = token or config.NOTION_TOKEN
         self.client = AsyncClient(auth=self.token)
         self.image_url = image_url
         self.image_name = image_name
-    
+        # 延迟初始化，先设为 None
+        self.image_name_ext: Optional[str] = None
+        self.image_name_all: Optional[str] = None
+
     async def __aenter__(self):
+        """进入上下文时完成异步初始化"""
+        self.image_name_ext = await self._detect_image_format()
+        self.image_name_all = f"{self.image_name}_cover.{self.image_name_ext}"
         return self
     
     async def __aexit__(self, exc_type, exc, tb):
@@ -108,15 +118,47 @@ class CoverUploader:
 
         raise TimeoutError(f"File upload timed out for {self.image_name} ({self.image_url}) after {max_wait_time} seconds")
 
-    async def image_upload(self) -> str:
+    async def _find_in_notion_uploads(self, start_cursor: Optional[str] = None) -> Optional[str]:
         """
-        上传图片到Notion
-
+        从 Notion 的 file uploads 列表中查找已上传的文件
+        
+        Args:
+            start_cursor: 分页游标
+        
         Returns:
-            file_upload_id: 上传成功后的文件ID
+            file_upload_id 或 None
         """
-        image_name_ext = await self._detect_image_format()
-        self.image_name_all = f"{self.image_name}.{image_name_ext}.{image_name_ext}"  # 额外添加扩展名以保证从Notion下载时格式正确，实际完全没用
+        try:
+            # 调用 Notion API 获取 file uploads 列表
+            response = await self.client.file_uploads.list(
+                status="uploaded",
+                page_size=100,
+                start_cursor=start_cursor
+            )
+            
+            for file_info in response.get("results", []):
+                if file_info.get("filename") == self.image_name_all:
+                    file_upload_id = file_info.get("id")
+                    logger.info(f"Found existing upload in Notion: {self.image_name_all} -> {file_upload_id}")
+                    return file_upload_id
+            
+            # 如果还有更多页，继续查找
+            if response.get("has_more") and response.get("next_cursor"):
+                return await self._find_in_notion_uploads(response["next_cursor"])
+            
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Failed to query Notion file uploads: {e}")
+            return None
+
+    async def _do_upload(self) -> str:
+        """
+        执行实际的上传操作
+        
+        Returns:
+            file_upload_id
+        """
         logger.info(f"Uploading image: {self.image_name_all}")
 
         # 创建文件上传
@@ -131,4 +173,39 @@ class CoverUploader:
         # Wait for file upload to complete
         await self._wait_for_upload_completion(file_upload_id)
 
+        return file_upload_id
+
+    async def image_upload(self) -> str:
+        """
+        上传图片到Notion（带缓存机制）
+        
+        查找顺序：
+        1. 本地内存/文件缓存
+        2. Notion file uploads API
+        3. 实际上传
+        
+        Returns:
+            file_upload_id: 上传成功后的文件ID
+        """
+        # 1. 先查本地缓存
+        cached_id = cover_cache.get(self.image_url)
+        if cached_id:
+            logger.info(f"Cache hit for {self.image_name}: {cached_id}")
+            return cached_id
+        
+        # 2. 查询 Notion 已上传文件列表
+        logger.info(f"Cache miss, querying Notion file uploads for: {self.image_name}")
+        notion_id = await self._find_in_notion_uploads()
+        if notion_id:
+            # 找到了，更新本地缓存
+            await cover_cache.set(self.image_url, notion_id)
+            return notion_id
+        
+        # 3. 都没有，执行实际上传
+        logger.info(f"Not found in Notion, uploading: {self.image_name}")
+        file_upload_id = await self._do_upload()
+        
+        # 更新缓存
+        await cover_cache.set(self.image_url, file_upload_id)
+        
         return file_upload_id

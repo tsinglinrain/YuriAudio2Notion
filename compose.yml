@@ -13,6 +13,6 @@ services:
       - FANJIAO_CV_BASE_URL=
       - API_KEY=****************
     volumes:
-      - ./data:/app/data
+      - ./data:/app/app/data_cache
     restart: unless-stopped
     command: uvicorn app.main:app --host 0.0.0.0 --port 5050 --workers 3 --timeout-keep-alive 120
