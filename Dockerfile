@@ -1,10 +1,10 @@
-FROM python:3.14.0-alpine AS builder
+FROM python:3.14.2-alpine AS builder
 
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-FROM python:3.14.0-alpine
+FROM python:3.14.2-alpine
 WORKDIR /app
 
 RUN apk add --no-cache curl
