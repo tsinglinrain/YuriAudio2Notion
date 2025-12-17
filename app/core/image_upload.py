@@ -29,7 +29,7 @@ class CoverUploader:
         return self
     
     async def __aexit__(self, exc_type, exc, tb):
-        await self.client.close()
+        await self.client.aclose()
 
     async def _detect_image_format(self) -> str:
         """Detect the image format by reading the magic number from the image URL."""
