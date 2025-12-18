@@ -53,6 +53,11 @@ class Config:
             raise RuntimeError("Missing required env FANJIAO_CV_BASE_URL")
         return value
 
+    @property
+    def DATA_DIR(self) -> str:
+        """cache data directory"""
+        return os.path.join(".", "app", "data_cache")
+
     # Notion 配置
     @property
     def NOTION_TOKEN(self) -> str:

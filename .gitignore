@@ -181,3 +181,4 @@ waiting_up_private.txt
 /Test
 *_test*
 *_test/*
+/app/data_cache/
