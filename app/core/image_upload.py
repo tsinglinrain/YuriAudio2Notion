@@ -143,9 +143,9 @@ class CoverUploader:
                     return file_upload_id
             
             # 如果还有更多页，继续查找
-            if response.get("has_more") and response.get("next_cursor"):
-                return await self._find_in_notion_uploads(response["next_cursor"])
-            
+            # if response.get("has_more") and response.get("next_cursor"):
+            #     return await self._find_in_notion_uploads(response["next_cursor"])
+            logger.debug(f"File not found in recent 100 uploads: {self.image_name_all}")
             return None
             
         except Exception as e:
