@@ -7,9 +7,10 @@
 
 import logging
 import sys
+from typing import Optional
 
 
-def setup_logger(name: str = None, level: int = logging.INFO) -> logging.Logger:
+def setup_logger(name: Optional[str] = None, level: int = logging.INFO) -> logging.Logger:
     """
     配置并返回日志记录器
 
@@ -35,7 +36,7 @@ def setup_logger(name: str = None, level: int = logging.INFO) -> logging.Logger:
     # 设置格式
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     handler.setFormatter(formatter)
 

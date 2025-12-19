@@ -29,7 +29,7 @@ def get_http_client() -> httpx.AsyncClient:
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                 "Origin": "https://www.rela.me",
-            }
+            },
         )
     return _http_client
 

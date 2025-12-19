@@ -26,7 +26,9 @@ class FanjiaoService:
         self.cv_client = FanjiaoCVClient()
         self.album_base_url = "https://s.rela.me/c/1SqTNu?album_id="
 
-    async def fetch_album_data(self, album_id: Optional[str]) -> Optional[Dict[str, Any]]:
+    async def fetch_album_data(
+        self, album_id: Optional[str]
+    ) -> Optional[Dict[str, Any]]:
         """
         获取并处理专辑完整数据（异步）
 
@@ -40,7 +42,7 @@ class FanjiaoService:
             # 并发获取专辑数据和CV数据
             album_raw, cv_raw = await asyncio.gather(
                 self.album_client.fetch_album(album_id),
-                self.cv_client.fetch_cv_list(album_id)
+                self.cv_client.fetch_cv_list(album_id),
             )
 
             # 提取专辑数据
@@ -61,7 +63,9 @@ class FanjiaoService:
                 "album_url": f"{self.album_base_url}{album_id}",
             }
 
-            logger.info(f"Successfully fetched data for album: {album_data.get('name')}")
+            logger.info(
+                f"Successfully fetched data for album: {album_data.get('name')}"
+            )
             return result
 
         except Exception as e:
@@ -108,10 +112,7 @@ class FanjiaoService:
         supporting_cv = []
 
         for cv in cv_list:
-            entry = {
-                "name": cv.get("name", ""),
-                "role_name": cv.get("role_name", "")
-            }
+            entry = {"name": cv.get("name", ""), "role_name": cv.get("role_name", "")}
             if cv.get("cv_type") == 1:
                 main_cv.append(entry)
             elif cv.get("cv_type") == 2:

@@ -23,16 +23,19 @@ router = APIRouter()
 # Pydantic 模型定义
 class WebhookUrlRequest(BaseModel):
     """URL webhook请求模型"""
+
     url: str
 
 
 class WebhookDataSourceRequest(BaseModel):
     """Notion数据源webhook请求模型"""
+
     data: dict[str, Any]
 
 
 class WebhookResponse(BaseModel):
     """Webhook响应模型"""
+
     status: str
     message: str
     data: dict[str, Any] | None = None
@@ -64,8 +67,7 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
         if not album_id:
             logger.warning("Album ID is empty")
             return WebhookResponse(
-                status="warning",
-                message="Album ID is empty in Notion data"
+                status="warning", message="Album ID is empty in Notion data"
             )
 
         # 获取页面和数据库信息
@@ -78,21 +80,16 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
         success = await processor.process_id(album_id, page_id=page_id)
 
         if not success:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to process album data"
-            )
+            raise HTTPException(status_code=500, detail="Failed to process album data")
 
         return WebhookResponse(
-            status="success",
-            message="Webhook received and data processed!"
+            status="success", message="Webhook received and data processed!"
         )
 
     except KeyError as e:
         logger.error(f"Missing key in Notion data: {e}")
         raise HTTPException(
-            status_code=400,
-            detail=f"Missing expected key in Notion data: {e}"
+            status_code=400, detail=f"Missing expected key in Notion data: {e}"
         )
 
     except Exception as e:
@@ -100,8 +97,7 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
             raise
         logger.error(f"Unexpected error: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail=f"An unexpected error occurred: {e}"
+            status_code=500, detail=f"An unexpected error occurred: {e}"
         )
 
 
@@ -118,8 +114,7 @@ async def webhook_page(url: str | None = Header(None)) -> WebhookResponse:
     if not url:
         logger.error("'url' header not found in request")
         raise HTTPException(
-            status_code=400,
-            detail="'url' header is missing from the request headers."
+            status_code=400, detail="'url' header is missing from the request headers."
         )
 
     logger.info(f"Found URL in headers: {url}")
@@ -130,14 +125,10 @@ async def webhook_page(url: str | None = Header(None)) -> WebhookResponse:
         success = await processor.process_url(url)
 
         if not success:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to process album data"
-            )
+            raise HTTPException(status_code=500, detail="Failed to process album data")
 
         return WebhookResponse(
-            status="success",
-            message="Webhook received and data processed!"
+            status="success", message="Webhook received and data processed!"
         )
 
     except Exception as e:
@@ -145,8 +136,7 @@ async def webhook_page(url: str | None = Header(None)) -> WebhookResponse:
             raise
         logger.error(f"Unexpected error: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail=f"An unexpected error occurred: {e}"
+            status_code=500, detail=f"An unexpected error occurred: {e}"
         )
 
 
@@ -164,28 +154,23 @@ async def webhook_url(request: WebhookUrlRequest) -> WebhookResponse:
         success = await processor.process_url(request.url)
 
         if not success:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to process album data"
-            )
+            raise HTTPException(status_code=500, detail="Failed to process album data")
 
         return WebhookResponse(
-            status="success",
-            message="Webhook received and data processed!"
+            status="success", message="Webhook received and data processed!"
         )
 
     except Exception as e:
         if isinstance(e, HTTPException):
             raise
         logger.error(f"Processing failed: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/webhook-data-source-debug", dependencies=[Depends(verify_api_key)])
-async def webhook_data_source_debug(request: WebhookDataSourceRequest) -> WebhookResponse:
+async def webhook_data_source_debug(
+    request: WebhookDataSourceRequest,
+) -> WebhookResponse:
     """
     调试用的webhook端点，打印接收到的Notion数据库数据
     """
@@ -193,7 +178,5 @@ async def webhook_data_source_debug(request: WebhookDataSourceRequest) -> Webhoo
     logger.info(f"Notion data source webhook data: {request.data}")
 
     return WebhookResponse(
-        status="success",
-        message="Debug data received",
-        data=request.data
+        status="success", message="Debug data received", data=request.data
     )

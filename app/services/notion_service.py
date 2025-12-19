@@ -30,9 +30,7 @@ class NotionService:
         self.client = NotionClient(data_source_id=data_source_id)
 
     async def upload_album_data(
-        self,
-        album_data: Dict[str, Any],
-        page_id: Optional[str] = None
+        self, album_data: Dict[str, Any], page_id: Optional[str] = None
     ) -> bool:
         """
         将专辑数据上传到Notion（异步）
@@ -79,8 +77,10 @@ class NotionService:
 
         # cover上传
         cover_url = album_data.get("cover", "")
-        cover_url = cover_url.split('?')[0] # 获取封面 URL 并去除参数
-        async with CoverUploader(image_url=cover_url, image_name=name) as cover_uploader:
+        cover_url = cover_url.split("?")[0]  # 获取封面 URL 并去除参数
+        async with CoverUploader(
+            image_url=cover_url, image_name=name
+        ) as cover_uploader:
             cover_file_id = await cover_uploader.image_upload()
 
         # 解析描述
@@ -112,7 +112,9 @@ class NotionService:
 
         supporting_cv_ori = album_data.get("supporting_cv", [])
         supporting_cv = FanjiaoService.format_list_data("name", supporting_cv_ori)
-        supporting_cv_role = FanjiaoService.format_list_data("role_name", supporting_cv_ori)
+        supporting_cv_role = FanjiaoService.format_list_data(
+            "role_name", supporting_cv_ori
+        )
 
         # 商剧判断
         commercial_drama = "商剧" if ori_price > 0 else "非商"

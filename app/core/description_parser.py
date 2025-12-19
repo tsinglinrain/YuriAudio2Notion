@@ -24,7 +24,7 @@ class DescriptionParser:
         self.main_description = ""
         self.additional_info = ""
         self.up_name = ""
-        self.tags = []
+        self.tags: list[str] = []
         self.episode_count = 0
 
         if description:
@@ -55,8 +55,8 @@ class DescriptionParser:
             return self.original_description, ""
 
         # 分割字符串
-        main_part = self.original_description[:split_index - 1]
-        additional_part = self.original_description[split_index + 1:]
+        main_part = self.original_description[: split_index - 1]
+        additional_part = self.original_description[split_index + 1 :]
 
         return main_part, additional_part
 
@@ -139,7 +139,7 @@ class DescriptionParser:
             # 根据长度决定是否分割为两字标签
             if len(tags_str) % chunk_size == 0:
                 remaining_tags = [
-                    tags_str[i: i + chunk_size]
+                    tags_str[i : i + chunk_size]
                     for i in range(0, len(tags_str), chunk_size)
                 ]
             else:
@@ -169,8 +169,16 @@ class DescriptionParser:
 
         # 中文数字到阿拉伯数字的映射
         chinese_num = {
-            "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
-            "六": 6, "七": 7, "八": 8, "九": 9, "十": 10,
+            "一": 1,
+            "二": 2,
+            "三": 3,
+            "四": 4,
+            "五": 5,
+            "六": 6,
+            "七": 7,
+            "八": 8,
+            "九": 9,
+            "十": 10,
             "两": 2,
         }
 

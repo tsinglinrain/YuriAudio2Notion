@@ -39,7 +39,9 @@ def simulate_webhook_request():
 
     # 构造请求体 (只需要 data 部分)
     request_body = {"data": webhook_data["data"]}
-    print(f"📦 请求体: {json.dumps(request_body, indent=2, ensure_ascii=False)[:500]}...")
+    print(
+        f"📦 请求体: {json.dumps(request_body, indent=2, ensure_ascii=False)[:500]}..."
+    )
 
     # 获取 API Key
     api_key = os.getenv("API_KEY", "")
@@ -68,7 +70,9 @@ def simulate_webhook_request():
         print(f"✅ 请求成功! 状态码: {response.status_code}")
         print(f"📬 响应内容: {response.text}")
     except httpx.HTTPStatusError as http_err:
-        print(f"❌ HTTP 错误: {http_err.response.status_code} - {http_err.response.text}")
+        print(
+            f"❌ HTTP 错误: {http_err.response.status_code} - {http_err.response.text}"
+        )
 
 
 if __name__ == "__main__":

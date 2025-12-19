@@ -29,11 +29,7 @@ class AlbumProcessor:
         self.fanjiao_service = FanjiaoService()
         self.notion_service = NotionService(data_source_id=data_source_id)
 
-    async def process_url(
-        self,
-        url: str,
-        page_id: Optional[str] = None
-    ) -> bool:
+    async def process_url(self, url: str, page_id: Optional[str] = None) -> bool:
         """
         处理单个专辑URL（异步）
 
@@ -50,11 +46,7 @@ class AlbumProcessor:
         album_id = url.split("album_id=")[-1]
         return await self.process_id(album_id, page_id)
 
-    async def process_id(
-        self,
-        album_id: str,
-        page_id: Optional[str] = None
-    ) -> bool:
+    async def process_id(self, album_id: str, page_id: Optional[str] = None) -> bool:
         """
         通过专辑ID处理专辑（异步）
 
@@ -95,8 +87,7 @@ class AlbumProcessor:
         """
         # 并发处理所有URL
         results = await asyncio.gather(
-            *[self.process_url(url) for url in url_list],
-            return_exceptions=True
+            *[self.process_url(url) for url in url_list], return_exceptions=True
         )
 
         success_count = 0
