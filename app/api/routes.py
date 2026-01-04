@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter, Header, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.core.processor import AlbumProcessor
+from app.core.processor import AlbumProcessor, AudioProcessor
 from app.api.middlewares import verify_api_key
 from app.utils.logger import setup_logger
 
@@ -165,6 +165,60 @@ async def webhook_url(request: WebhookUrlRequest) -> WebhookResponse:
             raise
         logger.error(f"Processing failed: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/webhook-song", dependencies=[Depends(verify_api_key)])
+async def webhook_song(
+    request: WebhookDataSourceRequest,
+) -> WebhookResponse:
+    """
+    对音乐进行抓取
+    处理来自Notion数据库的webhook请求
+    适用于在某个data source中专门设置一个空白page，在里面填写url，
+    随后会在指定data source生成该链接对应的page
+    """
+    logger.info(f"Received Notion webhook-song request")
+
+    try:
+        # 从请求中提取url
+        url = request.data["properties"]["Audio_URL"]["url"]
+        logger.info(f"Extracted URL: {url}")
+
+        if not url:
+            logger.warning("URL is empty")
+            return WebhookResponse(status="warning", message="URL is empty in request")
+
+        # 获取album id和audio id
+        album_id = url.split("album_id=")[-1].split("&")[0]
+        audio_id = url.split("audio_id=")[-1].split("&")[0]
+        logger.info(f"Album ID: {album_id}, Audio ID: {audio_id}")
+
+        if not album_id or not audio_id:
+            logger.warning("Album ID or Audio ID is empty")
+            return WebhookResponse(
+                status="warning", message="Album ID or Audio ID is empty in URL"
+            )
+
+        # 获取页面和数据库信息
+        page_id = request.data["id"]
+        data_source_id = request.data["parent"]["data_source_id"]
+        logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
+
+        # 处理URL
+        processor = AudioProcessor()
+        success = await processor.process_audio(album_id, audio_id, page_id)
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to process audio data")
+
+        return WebhookResponse(
+            status="success", message="Webhook received and audio data processed!"
+        )
+    except KeyError as e:
+        logger.error(f"Missing key in request data: {e}")
+        raise HTTPException(
+            status_code=400, detail=f"Missing expected key in request data: {e}"
+        )
 
 
 @router.post("/webhook-data-source-debug", dependencies=[Depends(verify_api_key)])

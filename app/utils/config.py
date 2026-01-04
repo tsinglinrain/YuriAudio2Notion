@@ -54,6 +54,14 @@ class Config:
         return value
 
     @property
+    def FANJIAO_AUDIO_BASE_URL(self) -> str:
+        """Fanjiao Audio API URL"""
+        value = os.getenv("FANJIAO_AUDIO_BASE_URL")
+        if not value:
+            raise RuntimeError("Missing required env FANJIAO_AUDIO_BASE_URL")
+        return value
+
+    @property
     def DATA_DIR(self) -> str:
         """cache data directory"""
         return os.path.join(".", "app", "data_cache")
