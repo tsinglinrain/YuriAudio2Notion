@@ -59,6 +59,36 @@ class NotionService:
             logger.error(f"Failed to upload data: {str(e)}")
             return False
 
+    async def upload_audio_data(
+        self, audio_data: Dict[str, Any], page_id: Optional[str] = None
+    ) -> bool:
+        """
+        将Audio数据上传到Notion（异步）
+
+        Args:
+            audio_data: Audio数据
+            page_id: 页面ID，如果提供则更新，否则创建
+
+        Returns:
+            是否成功
+        """
+        try:
+            # 准备数据
+            processed_data = await self._prepare_audio_data(audio_data)
+
+            # 构建属性
+            properties = NotionClient.build_audio_properties(**processed_data)
+
+            # 创建或更新页面
+            await self.client.manage_page(properties, page_id, emoji="🎵")
+
+            logger.info(f"Successfully uploaded data for: {processed_data['name']}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to upload data: {str(e)}")
+            return False
+
     async def _prepare_data(self, album_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         将原始数据处理成Notion需要的格式（异步）
@@ -138,4 +168,36 @@ class NotionService:
             "commercial_drama": commercial_drama,
             "episode_count": episode_count,
             "album_link": album_link,
+        }
+
+    async def _prepare_audio_data(self, audio_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        将原始Audio数据处理成Notion需要的格式（异步）
+
+        Args:
+            audio_data: 从Fanjiao获取的原始Audio数据
+
+        Returns:
+            处理后的Audio数据
+        """
+        # 基础信息
+        name = audio_data.get("name", "")
+        logger.info(f"Preparing audio data for: {name}")
+        description = audio_data.get("description", "")
+        publish_date = audio_data.get("publish_date", "")
+        publish_date = publish_date.replace("+08:00", "Z")
+
+        # cover上传
+        cover_url = audio_data.get("cover_square", "")
+        cover_url = cover_url.split("?")[0]  # 获取封面 URL 并去除参数
+        async with CoverUploader(
+            image_url=cover_url, image_name=name
+        ) as cover_uploader:
+            cover_file_id = await cover_uploader.image_upload()
+
+        return {
+            "name": name,
+            "description": description,
+            "cover": cover_file_id,
+            "publish_date": publish_date,
         }

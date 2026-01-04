@@ -32,7 +32,7 @@ class NotionClient:
         self.token = token or config.NOTION_TOKEN
         self.client = AsyncClient(auth=self.token)
 
-    async def create_page(self, properties: Dict[str, Any]) -> None:
+    async def create_page(self, properties: Dict[str, Any], emoji: str = "🎧") -> None:
         """
         在数据库中创建新页面
 
@@ -41,7 +41,7 @@ class NotionClient:
         """
         try:
             await self.client.pages.create(
-                icon={"type": "emoji", "emoji": "🎧"},
+                icon={"type": "emoji", "emoji": emoji},
                 parent={"data_source_id": self.data_source_id},
                 properties=properties,
             )
@@ -50,7 +50,9 @@ class NotionClient:
             logger.error(f"Failed to create page: {e}")
             raise
 
-    async def update_page(self, page_id: str, properties: Dict[str, Any]) -> None:
+    async def update_page(
+        self, page_id: str, properties: Dict[str, Any], emoji: str = "🎧"
+    ) -> None:
         """
         更新数据库中的页面
 
@@ -60,7 +62,7 @@ class NotionClient:
         """
         try:
             await self.client.pages.update(
-                icon={"type": "emoji", "emoji": "🎧"},
+                icon={"type": "emoji", "emoji": emoji},
                 page_id=page_id,
                 properties=properties,
             )
@@ -88,7 +90,10 @@ class NotionClient:
             return None
 
     async def manage_page(
-        self, properties: Dict[str, Any], page_id: Optional[str] = None
+        self,
+        properties: Dict[str, Any],
+        page_id: Optional[str] = None,
+        emoji: str = "🎧",
     ) -> None:
         """
         创建或更新页面
@@ -98,9 +103,10 @@ class NotionClient:
             page_id: 页面ID，如果提供则更新，否则创建
         """
         if page_id:
-            await self.update_page(page_id, properties)
+            await self.update_page(page_id, properties, emoji=emoji)
+            logger.info(f"Page {page_id} updated.")
         else:
-            await self.create_page(properties)
+            await self.create_page(properties, emoji=emoji)
 
     @staticmethod
     def build_properties(
@@ -177,5 +183,41 @@ class NotionClient:
             "商剧": {"select": {"name": commercial_drama}},
             "Episode Count": {"number": episode_count},
             "Album Link": {"url": album_link},
+            "Platform": {"multi_select": [{"name": platform}]},
+        }
+
+    @staticmethod
+    def build_audio_properties(
+        name: str,
+        publish_date: str,
+        description: str,
+        cover: str,
+        platform: str = "饭角",
+        time_zone: str = "Asia/Shanghai",
+    ) -> Dict[str, Any]:
+        """
+        构建Notion音频页面属性
+
+        Args:
+            name: 音频名称
+            publish_date: 发布日期
+            description: 描述
+            cover: 封面
+            platform: 平台
+            time_zone: 时区
+
+        Returns:
+            Notion音频页面属性字典
+        """
+        return {
+            "Name": {"title": [{"text": {"content": name}}]},
+            "Publish Date": {
+                "date": {
+                    "start": publish_date,
+                    "time_zone": time_zone,
+                }
+            },
+            "Description": {"rich_text": [{"text": {"content": description}}]},
+            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]},
             "Platform": {"multi_select": [{"name": platform}]},
         }

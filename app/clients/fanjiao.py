@@ -113,6 +113,7 @@ class BaseFanjiaoClient:
         try:
             response = await self.client.get(api_url, headers=headers)
             response.raise_for_status()
+            logger.debug(f"API request successful: {api_url}")
             return response.json()
         except httpx.HTTPError as e:
             logger.error(f"API request failed: {str(e)}")
@@ -151,3 +152,20 @@ class FanjiaoCVClient(BaseFanjiaoClient):
         """
         query = f"album_id={album_id}&from=H5"
         return await self._fetch(config.FANJIAO_CV_BASE_URL, query)
+
+
+class FanjiaoAudioClient(BaseFanjiaoClient):
+    """音频数据API客户端"""
+
+    async def fetch_audio(self, album_id: str) -> Dict[str, Any]:
+        """
+        获取音频数据（异步）
+
+        Args:
+            album_id: 专辑ID
+
+        Returns:
+            音频数据
+        """
+        query = f"album_id={album_id}"
+        return await self._fetch(config.FANJIAO_AUDIO_BASE_URL, query)

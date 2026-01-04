@@ -10,6 +10,7 @@ import asyncio
 from typing import List, Dict, Optional
 
 from app.services.fanjiao_service import FanjiaoService
+from app.services.fanjiao_audio_service import FanjiaoAudioService
 from app.services.notion_service import NotionService
 from app.utils.logger import setup_logger
 
@@ -104,3 +105,52 @@ class AlbumProcessor:
         )
 
         return {"success": success_count, "failed": failed_count}
+
+
+class AudioProcessor:
+    """Audio处理器"""
+
+    def __init__(self):
+        """初始化处理器"""
+        self.fanjiao_audio_service = FanjiaoAudioService()
+        self.notion_service = NotionService()
+
+    async def process_audio(
+        self,
+        album_id: str,
+        audio_id: Optional[str] = None,
+        page_id: Optional[str] = None,
+    ) -> bool:
+        """
+        处理单个Audio（异步）
+
+        Args:
+            album_id: 专辑ID
+            audio_id: Audio ID
+            page_id: 页面ID，如果提供则更新，否则创建
+
+        Returns:
+            是否处理成功
+        """
+        logger.info(f"Processing Audio ID: {audio_id} from Album ID: {album_id}")
+
+        # 获取数据
+        audio_data = await self.fanjiao_audio_service.fetch_audio_data(
+            album_id, audio_id
+        )
+
+        # 检查数据是否获取成功
+        if not audio_data:
+            logger.error(f"Failed to fetch data for Audio ID: {audio_id}")
+            return False
+        logger.info(f"Fetched data for Audio ID successfully")
+
+        # 上传到Notion
+        success = await self.notion_service.upload_audio_data(audio_data, page_id)
+
+        if success:
+            logger.info(f"Successfully processed Audio ID: {audio_id}")
+        else:
+            logger.error(f"Failed to upload data for Audio ID: {audio_id}")
+
+        return success
