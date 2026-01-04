@@ -6,7 +6,7 @@ Fanjiao Audio数据获取服务
 负责从Fanjiao获取和处理Audio数据（异步版本）
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 
 from app.clients.fanjiao import FanjiaoAudioClient
 from app.utils.logger import setup_logger
@@ -65,7 +65,9 @@ class FanjiaoAudioService:
         """
         audio_data_list = raw_data.get("data", {}).get("audios_list", [])
         if not audio_data_list:
-            logger.error(f"Failed to fetch data for Audio ID: {audio_id}")
+            logger.error(
+                f"No audio data found in response (audios_list is empty or missing) for Audio ID: {audio_id}"
+            )
             return None
 
         # 将audio_id转为整数进行比较，因为API返回的是整数类型

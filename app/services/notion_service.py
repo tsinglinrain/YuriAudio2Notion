@@ -60,13 +60,13 @@ class NotionService:
             return False
 
     async def upload_audio_data(
-        self, album_data: Dict[str, Any], page_id: Optional[str] = None
+        self, audio_data: Dict[str, Any], page_id: Optional[str] = None
     ) -> bool:
         """
         将Audio数据上传到Notion（异步）
 
         Args:
-            album_data: Audio数据
+            audio_data: Audio数据
             page_id: 页面ID，如果提供则更新，否则创建
 
         Returns:
@@ -74,7 +74,7 @@ class NotionService:
         """
         try:
             # 准备数据
-            processed_data = await self._prepare_audio_data(album_data)
+            processed_data = await self._prepare_audio_data(audio_data)
 
             # 构建属性
             properties = NotionClient.build_audio_properties(**processed_data)

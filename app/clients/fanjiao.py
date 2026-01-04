@@ -113,7 +113,7 @@ class BaseFanjiaoClient:
         try:
             response = await self.client.get(api_url, headers=headers)
             response.raise_for_status()
-            logger.info(f"API request successful: {api_url}")
+            logger.debug(f"API request successful: {api_url}")
             return response.json()
         except httpx.HTTPError as e:
             logger.error(f"API request failed: {str(e)}")
@@ -163,7 +163,6 @@ class FanjiaoAudioClient(BaseFanjiaoClient):
 
         Args:
             album_id: 专辑ID
-            audio_id: 音频ID
 
         Returns:
             音频数据

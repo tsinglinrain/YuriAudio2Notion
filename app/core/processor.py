@@ -116,7 +116,10 @@ class AudioProcessor:
         self.notion_service = NotionService()
 
     async def process_audio(
-        self, album_id: str, audio_id: Optional[str] = None, page_id: Optional[str] = None
+        self,
+        album_id: str,
+        audio_id: Optional[str] = None,
+        page_id: Optional[str] = None,
     ) -> bool:
         """
         处理单个Audio（异步）

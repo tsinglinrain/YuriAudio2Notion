@@ -9,6 +9,7 @@ API路由定义
 from typing import Any
 from fastapi import APIRouter, Header, Depends, HTTPException
 from pydantic import BaseModel
+from urllib.parse import urlparse, parse_qs
 
 from app.core.processor import AlbumProcessor, AudioProcessor
 from app.api.middlewares import verify_api_key
@@ -189,14 +190,31 @@ async def webhook_song(
             return WebhookResponse(status="warning", message="URL is empty in request")
 
         # 获取album id和audio id
-        album_id = url.split("album_id=")[-1].split("&")[0]
-        audio_id = url.split("audio_id=")[-1].split("&")[0]
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query)
+
+        # 提取并验证 album_id
+        album_id_list = params.get("album_id", [])
+        album_id = album_id_list[0] if album_id_list else ""
+
+        # 提取并验证 audio_id
+        audio_id_list = params.get("audio_id", [])
+        audio_id = audio_id_list[0] if audio_id_list else ""
         logger.info(f"Album ID: {album_id}, Audio ID: {audio_id}")
 
         if not album_id or not audio_id:
             logger.warning("Album ID or Audio ID is empty")
             return WebhookResponse(
                 status="warning", message="Album ID or Audio ID is empty in URL"
+            )
+
+        # 验证参数是否为有效数字
+        if not album_id.isdigit() or not audio_id.isdigit():
+            logger.warning(
+                f"Invalid ID format: album_id={album_id}, audio_id={audio_id}"
+            )
+            return WebhookResponse(
+                status="warning", message="album_id and audio_id must be numeric values"
             )
 
         # 获取页面和数据库信息
@@ -219,6 +237,11 @@ async def webhook_song(
         raise HTTPException(
             status_code=400, detail=f"Missing expected key in request data: {e}"
         )
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
+        logger.error(f"Processing failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/webhook-data-source-debug", dependencies=[Depends(verify_api_key)])
