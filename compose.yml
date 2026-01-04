@@ -11,6 +11,7 @@ services:
       - FANJIAO_SALT=
       - FANJIAO_BASE_URL=
       - FANJIAO_CV_BASE_URL=
+      - FANJIAO_AUDIO_BASE_URL=
       - API_KEY=****************
     volumes:
       - ./data:/app/app/data_cache
