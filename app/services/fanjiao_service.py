@@ -94,7 +94,6 @@ class FanjiaoService:
             "liked": data.get("liked", 0),
             "play": data.get("play", 0),
             "update_frequency": data.get("update_frequency", ""),
-            "play": data.get("play", 0),
             "ori_price": data.get("ori_price", 0),
             "author_name": data.get("author_name", ""),
             "up_name": data.get("up_name", ""),

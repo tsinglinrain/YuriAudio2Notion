@@ -77,7 +77,7 @@ class AlbumProcessor:
         return success
 
     async def update_process_id(
-        self, album_id: str, page_id: str, update_fields: List
+        self, album_id: str, page_id: str, update_fields: List[str]
     ) -> bool:
         """
         更新已有页面的专辑数据（异步）
