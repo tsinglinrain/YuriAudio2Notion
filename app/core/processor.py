@@ -76,6 +76,40 @@ class AlbumProcessor:
 
         return success
 
+    async def update_process_id(
+        self, album_id: str, page_id: str, update_fields: List
+    ) -> bool:
+        """
+        更新已有页面的专辑数据（异步）
+        Args:
+            album_id: 专辑ID
+            page_id: Notion页面ID
+            update_fields: 需要更新的字段列表
+        Returns:
+            是否更新成功
+        """
+
+        logger.info(f"Updating album ID: {album_id} on page ID: {page_id}")
+        logger.info(f"Fields to update: {update_fields}")
+
+        # 获取数据
+        album_data = await self.fanjiao_service.fetch_album_data(album_id)
+
+        if not album_data:
+            logger.error(f"Failed to fetch data for album ID: {album_id}")
+            return False
+
+        # 使用部分更新方法
+        success = await self.notion_service.update_partial_album_data(
+            album_data, page_id, update_fields
+        )
+
+        if success:
+            logger.info(f"Successfully updated: {album_id} on page ID: {page_id}")
+        else:
+            logger.error(f"Failed to update data for: {album_id} on page ID: {page_id}")
+        return success
+
     async def process_url_list(self, url_list: List[str]) -> Dict[str, int]:
         """
         批量处理URL列表（异步）
