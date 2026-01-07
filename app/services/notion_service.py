@@ -59,6 +59,51 @@ class NotionService:
             logger.error(f"Failed to upload data: {str(e)}")
             return False
 
+    async def update_partial_album_data(
+        self,
+        album_data: Dict[str, Any],
+        page_id: str,
+        update_fields: list[str],
+    ) -> bool:
+        """
+        部分更新专辑数据到Notion（异步）
+
+        根据用户选择的字段进行部分更新，而非全量更新
+
+        Args:
+            album_data: 从Fanjiao获取的原始专辑数据
+            page_id: 需要更新的Notion页面ID
+            update_fields: 需要更新的字段列表
+
+        Returns:
+            是否成功
+        """
+        try:
+            # 准备部分更新数据
+            processed_data = await self._prepare_partial_data(album_data, update_fields)
+
+            # 构建部分属性
+            properties = NotionClient.build_partial_properties(
+                update_fields=update_fields,
+                **processed_data,
+            )
+
+            if not properties:
+                logger.warning(
+                    f"No valid properties to update for fields: {update_fields}"
+                )
+                return False
+
+            # 更新页面
+            await self.client.update_page(page_id, properties)
+
+            logger.info(f"Successfully updated partial data for page: {page_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update partial data: {str(e)}")
+            return False
+
     async def upload_audio_data(
         self, audio_data: Dict[str, Any], page_id: Optional[str] = None
     ) -> bool:
@@ -169,6 +214,55 @@ class NotionService:
             "episode_count": episode_count,
             "album_link": album_link,
         }
+
+    async def _prepare_partial_data(
+        self,
+        album_data: Dict[str, Any],
+        update_fields: list[str],
+    ) -> Dict[str, Any]:
+        """
+        根据需要更新的字段准备数据（异步）
+
+        只处理需要的字段，避免不必要的API调用
+
+        Args:
+            album_data: 从Fanjiao获取的原始数据
+            update_fields: 需要更新的字段列表
+
+        Returns:
+            处理后的数据
+        """
+        result: Dict[str, Any] = {}
+        name = album_data.get("name", "")
+
+        # 处理封面相关字段
+        if "Cover_horizontal" in update_fields:
+            cover_horizontal_url = album_data.get("cover_horizontal", "")
+            if cover_horizontal_url:
+                cover_horizontal_url = cover_horizontal_url.split("?")[0]
+                async with CoverUploader(
+                    image_url=cover_horizontal_url, image_name=f"{name}_horizontal"
+                ) as cover_uploader:
+                    result["cover_horizontal"] = await cover_uploader.image_upload()
+
+        if "Cover_square" in update_fields:
+            cover_square_url = album_data.get("cover_square", "")
+            if cover_square_url:
+                cover_square_url = cover_square_url.split("?")[0]
+                async with CoverUploader(
+                    image_url=cover_square_url, image_name=f"{name}_square"
+                ) as cover_uploader:
+                    result["cover_square"] = await cover_uploader.image_upload()
+
+        # 处理播放量
+        if "播放" in update_fields:
+            result["play"] = album_data.get("play", 0)
+
+        # 处理追剧/订阅数
+        if "追剧" in update_fields:
+            result["liked"] = album_data.get("liked", 0)
+
+        return result
 
     async def _prepare_audio_data(self, audio_data: Dict[str, Any]) -> Dict[str, Any]:
         """

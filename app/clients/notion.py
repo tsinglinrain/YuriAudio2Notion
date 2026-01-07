@@ -221,3 +221,56 @@ class NotionClient:
             "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]},
             "Platform": {"multi_select": [{"name": platform}]},
         }
+
+    @staticmethod
+    def build_partial_properties(
+        update_fields: List[str],
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """
+        根据需要更新的字段动态构建Notion页面属性
+
+        Args:
+            update_fields: 需要更新的字段列表
+            **kwargs: 字段对应的值
+
+        Returns:
+            Notion页面属性字典（仅包含需要更新的字段）
+        """
+        # 定义字段名到Notion属性的映射
+        field_mapping = {
+            # 封面相关
+            "Cover_horizontal": lambda data: {
+                "Cover_horizontal": {
+                    "files": [
+                        {
+                            "type": "file_upload",
+                            "file_upload": {"id": data.get("cover_horizontal", "")},
+                        }
+                    ]
+                }
+            },
+            "Cover_square": lambda data: {
+                "Cover_square": {
+                    "files": [
+                        {
+                            "type": "file_upload",
+                            "file_upload": {"id": data.get("cover_square", "")},
+                        }
+                    ]
+                }
+            },
+            # 播放量
+            "播放": lambda data: {"播放": {"number": data.get("play", 0)}},
+            # 追剧（订阅/收藏）
+            "追剧": lambda data: {"追剧": {"number": data.get("liked", 0)}},
+        }
+
+        properties: Dict[str, Any] = {}
+
+        for field in update_fields:
+            if field in field_mapping:
+                field_props = field_mapping[field](kwargs)
+                properties.update(field_props)
+
+        return properties

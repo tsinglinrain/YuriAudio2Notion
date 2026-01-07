@@ -244,6 +244,71 @@ async def webhook_song(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/webhook-data-source-update", dependencies=[Depends(verify_api_key)])
+async def webhook_data_source_update(
+    request: WebhookDataSourceRequest,
+) -> WebhookResponse:
+    """
+    对data source中的某些property进行更新时触发的webhook端点
+    """
+    logger.info("Received Notion webhook-data-source-update request")
+
+    try:
+        # 从Notion数据中提取album id
+        album_id = request.data["properties"]["FanjiaoAlbumID"]["number"]
+        album_id = str(album_id) if album_id is not None else ""
+        logger.info(f"Extracted Album ID: {album_id}")
+
+        if not album_id:
+            logger.warning("Album ID is empty")
+            return WebhookResponse(
+                status="warning", message="Album ID is empty in Notion data"
+            )
+
+        # 获取页面和数据库信息
+        page_id = request.data["id"]
+        logger.info(f"Page ID: {page_id}")
+
+        # 处理需要更新的数据
+        update_selection: list = request.data["properties"]["Update_selection"][
+            "multi_select"
+        ]
+        if not update_selection:
+            logger.info("No updates selected")
+            return WebhookResponse(
+                status="info", message="No updates selected in Notion data"
+            )
+        update_fields = [item["name"] for item in update_selection]
+        logger.info(f"Fields to update: {update_fields}")
+
+        # 进行更新处理
+        processor = AlbumProcessor()
+        success = await processor.update_process_id(
+            album_id, page_id=page_id, update_fields=update_fields
+        )
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to update album data")
+
+        return WebhookResponse(
+            status="success", message="Webhook received and data updated!"
+        )
+
+    except KeyError as e:
+        logger.error(f"Missing key in Notion data: {e}")
+        raise HTTPException(
+            status_code=400, detail=f"Missing expected key in Notion data: {e}"
+        )
+
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
+        logger.error(f"Unexpected error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail=f"An unexpected error occurred: {e}"
+        )
+
+
 @router.post("/webhook-data-source-debug", dependencies=[Depends(verify_api_key)])
 async def webhook_data_source_debug(
     request: WebhookDataSourceRequest,
