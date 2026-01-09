@@ -319,7 +319,7 @@ class NotionClient:
                 "Publish Date": {
                     "date": {
                         "start": data.get("publish_date", ""),
-                        "time_zone": data.get("time_zone", time_zone),
+                        "time_zone": time_zone,
                     }
                 }
             },

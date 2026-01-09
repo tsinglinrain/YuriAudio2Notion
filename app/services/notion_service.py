@@ -218,7 +218,7 @@ class NotionService:
         if "Description" in update_fields:
             result["description"] = audio_data.get("description", "")
 
-        if "Publish_date" in update_fields:
+        if "Publish Date" in update_fields:
             publish_date = audio_data.get("publish_date", "")
             publish_date = publish_date.replace("+08:00", "Z")
             result["publish_date"] = publish_date
