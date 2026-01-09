@@ -195,11 +195,11 @@ async def webhook_song(
 
         # 提取并验证 album_id
         album_id_list = params.get("album_id", [])
-        album_id = album_id_list[0] if album_id_list else ""
+        album_id: str = album_id_list[0] if album_id_list else ""
 
         # 提取并验证 audio_id
         audio_id_list = params.get("audio_id", [])
-        audio_id = audio_id_list[0] if audio_id_list else ""
+        audio_id: str = audio_id_list[0] if audio_id_list else ""
         logger.info(f"Album ID: {album_id}, Audio ID: {audio_id}")
 
         if not album_id or not audio_id:

@@ -192,6 +192,7 @@ class NotionClient:
         publish_date: str,
         description: str,
         cover: str,
+        play: int,
         platform: str = "饭角",
         time_zone: str = "Asia/Shanghai",
     ) -> Dict[str, Any]:
@@ -219,6 +220,7 @@ class NotionClient:
             },
             "Description": {"rich_text": [{"text": {"content": description}}]},
             "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]},
+            "播放": {"number": play},
             "Platform": {"multi_select": [{"name": platform}]},
         }
 

@@ -87,6 +87,7 @@ class FanjiaoAudioService:
                     "description": data.get("description", ""),
                     "cover": data.get("cover", ""),
                     "cover_square": data.get("square", ""),
+                    "play": data.get("play", ""),
                     "subtitle": data.get("subtitle", ""),
                 }
 

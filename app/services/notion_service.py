@@ -280,6 +280,7 @@ class NotionService:
         description = audio_data.get("description", "")
         publish_date = audio_data.get("publish_date", "")
         publish_date = publish_date.replace("+08:00", "Z")
+        play = audio_data.get("play", 0)
 
         # cover上传
         cover_url = audio_data.get("cover_square", "")
@@ -294,4 +295,5 @@ class NotionService:
             "description": description,
             "cover": cover_file_id,
             "publish_date": publish_date,
+            "play": play,
         }
