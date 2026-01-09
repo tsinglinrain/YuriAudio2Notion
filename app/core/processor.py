@@ -188,3 +188,50 @@ class AudioProcessor:
             logger.error(f"Failed to upload data for Audio ID: {audio_id}")
 
         return success
+
+    async def update_process_audio(
+        self,
+        album_id: str,
+        audio_id: str,
+        page_id: str,
+        update_fields: List[str],
+    ) -> bool:
+        """
+        更新已有页面的音频数据（异步）
+
+        Args:
+            album_id: 专辑ID
+            audio_id: 音频ID
+            page_id: Notion页面ID
+            update_fields: 需要更新的字段列表
+
+        Returns:
+            是否更新成功
+        """
+        logger.info(f"Updating Audio ID: {audio_id} on page ID: {page_id}")
+        logger.info(f"Fields to update: {update_fields}")
+
+        # 获取数据
+        audio_data = await self.fanjiao_audio_service.fetch_audio_data(
+            album_id, audio_id
+        )
+
+        if not audio_data:
+            logger.error(f"Failed to fetch data for Audio ID: {audio_id}")
+            return False
+
+        # 使用部分更新方法
+        success = await self.notion_service.update_partial_audio_data(
+            audio_data, page_id, update_fields
+        )
+
+        if success:
+            logger.info(
+                f"Successfully updated Audio ID: {audio_id} on page ID: {page_id}"
+            )
+        else:
+            logger.error(
+                f"Failed to update data for Audio ID: {audio_id} on page ID: {page_id}"
+            )
+
+        return success

@@ -276,3 +276,58 @@ class NotionClient:
                 properties.update(field_props)
 
         return properties
+
+    @staticmethod
+    def build_partial_audio_properties(
+        update_fields: List[str],
+        time_zone: str = "Asia/Shanghai",
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """
+        根据需要更新的字段动态构建Notion音频页面属性
+
+        Args:
+            update_fields: 需要更新的字段列表
+            **kwargs: 字段对应的值
+
+        Returns:
+            Notion音频页面属性字典（仅包含需要更新的字段）
+        """
+        # 定义字段名到Notion属性的映射
+        field_mapping = {
+            # 封面相关
+            "Cover": lambda data: {
+                "Cover": {
+                    "files": [
+                        {
+                            "type": "file_upload",
+                            "file_upload": {"id": data.get("cover_id", "")},
+                        }
+                    ]
+                }
+            },
+            # 播放量
+            "播放": lambda data: {"播放": {"number": data.get("play", 0)}},
+            # 描述
+            "Description": lambda data: {
+                "Description": {"rich_text": [{"text": {"content": data.get("description", "")}}]}
+            },
+            # 发布日期
+            "Publish_date": lambda data: {
+                "Publish Date": {
+                    "date": {
+                        "start": data.get("publish_date", ""),
+                        "time_zone": data.get("time_zone", time_zone),
+                    }
+                }
+            },
+        }
+
+        properties: Dict[str, Any] = {}
+
+        for field in update_fields:
+            if field in field_mapping:
+                field_props = field_mapping[field](kwargs)
+                properties.update(field_props)
+
+        return properties

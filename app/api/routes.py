@@ -244,6 +244,99 @@ async def webhook_song(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/webhook-song-update", dependencies=[Depends(verify_api_key)])
+async def webhook_song_update(
+    request: WebhookDataSourceRequest,
+) -> WebhookResponse:
+    """
+    对音乐进行抓取
+    处理来自Notion数据库的webhook请求
+    对部分属性进行更新
+    """
+    logger.info("Received Notion webhook-song-update request")
+
+    try:
+        # 从请求中提取url
+        url = request.data["properties"]["Audio_URL"]["url"]
+        logger.info(f"Extracted URL: {url}")
+
+        if not url:
+            logger.warning("URL is empty")
+            return WebhookResponse(status="warning", message="URL is empty in request")
+
+        # 获取album id和audio id
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query)
+
+        # 提取并验证 album_id
+        album_id_list = params.get("album_id", [])
+        album_id: str = album_id_list[0] if album_id_list else ""
+
+        # 提取并验证 audio_id
+        audio_id_list = params.get("audio_id", [])
+        audio_id: str = audio_id_list[0] if audio_id_list else ""
+        logger.info(f"Album ID: {album_id}, Audio ID: {audio_id}")
+
+        if not album_id or not audio_id:
+            logger.warning("Album ID or Audio ID is empty")
+            return WebhookResponse(
+                status="warning", message="Album ID or Audio ID is empty in URL"
+            )
+
+        # 验证参数是否为有效数字
+        if not album_id.isdigit() or not audio_id.isdigit():
+            logger.warning(
+                f"Invalid ID format: album_id={album_id}, audio_id={audio_id}"
+            )
+            return WebhookResponse(
+                status="warning", message="album_id and audio_id must be numeric values"
+            )
+
+        # 获取页面和数据库信息
+        page_id = request.data["id"]
+        data_source_id = request.data["parent"]["data_source_id"]
+        logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
+
+        # 处理需要更新的数据
+        update_selection: list = request.data["properties"]["UpdateAudioSelection"][
+            "multi_select"
+        ]
+        if not update_selection:
+            logger.info("No updates selected")
+            return WebhookResponse(
+                status="info", message="No updates selected in Notion data"
+            )
+        update_fields = [item["name"] for item in update_selection]
+        logger.info(f"Fields to update: {update_fields}")
+
+        # 进行更新处理
+        processor = AudioProcessor()
+        success = await processor.update_process_audio(
+            album_id, audio_id, page_id, update_fields
+        )
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to update album data")
+
+        return WebhookResponse(
+            status="success", message="Webhook received and data updated!"
+        )
+
+    except KeyError as e:
+        logger.error(f"Missing key in Notion data: {e}")
+        raise HTTPException(
+            status_code=400, detail=f"Missing expected key in Notion data: {e}"
+        )
+
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
+        logger.error(f"Unexpected error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail=f"An unexpected error occurred: {e}"
+        )
+
+
 @router.post("/webhook-data-source-update", dependencies=[Depends(verify_api_key)])
 async def webhook_data_source_update(
     request: WebhookDataSourceRequest,

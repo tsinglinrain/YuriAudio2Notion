@@ -134,6 +134,97 @@ class NotionService:
             logger.error(f"Failed to upload data: {str(e)}")
             return False
 
+    async def update_partial_audio_data(
+        self,
+        audio_data: Dict[str, Any],
+        page_id: str,
+        update_fields: list[str],
+    ) -> bool:
+        """
+        部分更新音频数据到Notion（异步）
+
+        根据用户选择的字段进行部分更新，而非全量更新
+
+        Args:
+            audio_data: 从Fanjiao获取的原始音频数据
+            page_id: 需要更新的Notion页面ID
+            update_fields: 需要更新的字段列表
+
+        Returns:
+            是否成功
+        """
+        try:
+            # 准备部分更新数据
+            processed_data = await self._prepare_partial_audio_data(
+                audio_data, update_fields
+            )
+
+            # 构建部分属性
+            properties = NotionClient.build_partial_audio_properties(
+                update_fields=update_fields,
+                **processed_data,
+            )
+
+            if not properties:
+                logger.warning(
+                    f"No valid properties to update for fields: {update_fields}"
+                )
+                return False
+
+            # 更新页面
+            await self.client.update_page(page_id, properties, emoji="🎵")
+
+            logger.info(f"Successfully updated partial audio data for page: {page_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update partial audio data: {str(e)}")
+            return False
+
+    async def _prepare_partial_audio_data(
+        self,
+        audio_data: Dict[str, Any],
+        update_fields: list[str],
+    ) -> Dict[str, Any]:
+        """
+        根据需要更新的字段准备音频数据（异步）
+
+        只处理需要的字段，避免不必要的API调用
+
+        Args:
+            audio_data: 从Fanjiao获取的原始音频数据
+            update_fields: 需要更新的字段列表
+
+        Returns:
+            处理后的数据
+        """
+        result: Dict[str, Any] = {}
+        name = audio_data.get("name", "")
+
+        # 处理封面相关字段
+        if "Cover" in update_fields:
+            cover_url = audio_data.get("cover_square", "")
+            if cover_url:
+                cover_url = cover_url.split("?")[0]
+                async with CoverUploader(
+                    image_url=cover_url, image_name=name
+                ) as cover_uploader:
+                    result["cover_id"] = await cover_uploader.image_upload()
+
+        # 处理播放量
+        if "播放" in update_fields:
+            result["play"] = audio_data.get("play", 0)
+
+        if "Description" in update_fields:
+            result["description"] = audio_data.get("description", "")
+        
+        if "Publish_date" in update_fields:
+            publish_date = audio_data.get("publish_date", "")
+            publish_date = publish_date.replace("+08:00", "Z")
+            result["publish_date"] = publish_date
+
+        return result
+
     async def _prepare_data(self, album_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         将原始数据处理成Notion需要的格式（异步）
