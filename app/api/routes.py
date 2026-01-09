@@ -249,9 +249,9 @@ async def webhook_song_update(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """
-    对音乐进行抓取
-    处理来自Notion数据库的webhook请求
-    对部分属性进行更新
+    对已有音频数据进行部分字段更新
+    处理来自 Notion 数据库的 webhook 请求
+    根据页面中选择的更新项，对对应音频的部分属性进行更新
     """
     logger.info("Received Notion webhook-song-update request")
 
@@ -316,7 +316,7 @@ async def webhook_song_update(
         )
 
         if not success:
-            raise HTTPException(status_code=500, detail="Failed to update album data")
+            raise HTTPException(status_code=500, detail="Failed to update audio data")
 
         return WebhookResponse(
             status="success", message="Webhook received and data updated!"

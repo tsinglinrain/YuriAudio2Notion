@@ -310,10 +310,12 @@ class NotionClient:
             "播放": lambda data: {"播放": {"number": data.get("play", 0)}},
             # 描述
             "Description": lambda data: {
-                "Description": {"rich_text": [{"text": {"content": data.get("description", "")}}]}
+                "Description": {
+                    "rich_text": [{"text": {"content": data.get("description", "")}}]
+                }
             },
             # 发布日期
-            "Publish_date": lambda data: {
+            "Publish Date": lambda data: {
                 "Publish Date": {
                     "date": {
                         "start": data.get("publish_date", ""),
