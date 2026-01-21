@@ -4,8 +4,20 @@ on:
   push:
     branches: [ "main"]
     tags: [ "v*.*.*" ]
+    paths:
+      - 'app/**'
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - '.dockerignore'
+      - '.github/workflows/docker-release.yml'
   pull_request:
     branches: [ "main"]
+    paths:
+      - 'app/**'
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - '.dockerignore'
+      - '.github/workflows/docker-release.yml'
 
 env:
   REGISTRY: docker.io
