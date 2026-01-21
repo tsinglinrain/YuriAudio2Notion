@@ -1,23 +1,35 @@
-# 参数
+# 基本参数
 
 ## 饭角element提取
 
 name
+
 description
+
 horizontal, 废弃, 之前是api不支持，现在是太模糊了, 不合适
+
 publish_date
+
 update_frequency
+
 ori_price
+
 author_name
 
-## Notion property设置
+## Notion property 名字设置
 
 Name
+
 简介
+
 Cover
+
 Publish Date
+
 更新
+
 Price
+
 原著
 
 商剧
@@ -27,7 +39,7 @@ Price
 保持和饭角一致
 
 
-# 其他
+# 海报封面相关
 
 离谱, url file无法预览的, 只能以附件的形式进行存储, 然后展示链接, 效果较差
 
@@ -37,13 +49,15 @@ Price
 
 我的方法是微信打开小程序, 然后下载, 随后上传.
 
+- [x] 后续Notion的API支持file上传, 已经解决.....
+
 # 时间参看
 
 [Notion page-property](https://developers.notion.com/reference/page-property-values#files)
 
 其他property也是这个链接
 
-# 完成情况
+# 最早项目构建完成情况
 
 - [x] 基本完成, 已经能够完成工作流,
 
@@ -55,8 +69,8 @@ Price
 
     prompt, 对于诸如"全一季现代纯爱广播剧《有趣》""全一季科幻悬疑百合广播剧《离开与你相遇的世界》""现代纯爱广播剧《帮我拍拍》第一季"等字符串，想要提取每一个的tag，如'全一季""现代""纯爱".需要注意的是，每个字符串"广播剧《"前面内容都是未知的,如何提取呢？
 
-- [x] GitHub项目, 中文分词太重, 不合适
-- [x] 直接取吧. achieved
+  - [x] GitHub项目, 中文分词太重, 不合适
+  - [x] 直接取吧. achieved
 
 - [x] up主也可从简介中提取, achieved
 
@@ -177,26 +191,71 @@ http://your-server:5050/webhook-url?api_key=your_secure_key
 
 
 ## 继续维护
-- [ ] 先data_source, 修改好后commit, 不能一起改, 维持一下干净点的commit, 养成好点的习惯
+- [x] 先data_source, 修改好后commit, 不能一起改, 维持一下干净点的commit, 养成好点的习惯
   - 看了半天，原来是webhook版本的实现思路是更新界面, 所以和`data_source`根本没有关系,
   - 也就是说根本不用改
 
-- 我真的服了，明明什么都没改，怎么docker 镜像拉去之后就是运行不了.....
+- [x] 我真的服了，明明什么都没改，怎么docker 镜像拉去之后就是运行不了.....
+  - [x] 原来是服务端docker compose文件没改，服了
 
 就这样吧，感觉差不多了....
 
 还可以继续优化
 
 
-改成获取`FanjiaoAlbumID`, 因为以后拓展的话
+- [x] 改成获取`FanjiaoAlbumID`, 因为以后拓展的话
 
-不是，怎么漫播的广播剧全部下架了? 想听听雨绵的，直接没了
+不是，怎么漫播的广播剧全部下架了? 想听听雨眠的，直接没了
 
 我写的代码原文就没有`url`, 依赖输入....好吧，感觉没有修改的必要了
 
-改成id，url的处理放到前置
+- [x] 改成id，url的处理放到前置
 
-`webhook_data_source`就改了者这个一个，其余懒得改了，真不想改了，反正我也只用这个
+- [ ] `webhook_data_source`就改了者这个一个，其余懒得改了，真不想改了，反正我也只用这个
+
+
+# 业务扩展
+
+## 歌曲方面
+
+目前来看，还是选择参数为网址，更为方便
+歌词的提取大概是需要一个从饭角分享粘贴连接，复制进QQ，然后复制至Notion的过程
+
+很多代码可以复用
+
+优先提取
+
+## 其他
+
+- update需要提上日程了, 我发现horizontal效果更好
+
+- 测试了一下，部分horizontal以及square是原本cover的部分截取，分辨率很低。
+
+- 总而言之，海报还是得看竖版的
+
+- 歌曲的海报有些是没有的，需要进行更改
+
+- cover是一定存在的的，但是square,horizonnal不一定存在
+
+## 本次音乐相关提取方面
+
+- [x] 音乐cover统一上传square
+
+歌词存在两个部分
+description
+subtitle
+
+- [x] description可以直接写
+- [ ] subtitle需要先下载，再读取，中间还涉及提取，暂不考虑
+
+- [x] 能在线读取吗？
+
+    读取不了
+
+- [x] 目前上传部分代码基本完成, 但是description部分拆分不了。只能手动进行拆分。
+
+- [ ] 图片icon，似乎只能emoji, 没有解决办法。
+
 
 # Acknowledgement
 
