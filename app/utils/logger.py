@@ -31,18 +31,23 @@ def setup_logger(
 
     logger.setLevel(level)
 
-    # 创建控制台处理器
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(level)
+    # 只在 "app" 根 logger 上添加 handler，子 logger 通过传播机制输出
+    if name == "app":
+        # 创建控制台处理器
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(level)
 
-    # 设置格式
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    handler.setFormatter(formatter)
+        # 设置格式
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        handler.setFormatter(formatter)
 
-    logger.addHandler(handler)
+        logger.addHandler(handler)
+
+        # 阻止日志传播到 root logger，避免 uvicorn 等框架的 handler 重复输出
+        logger.propagate = False
 
     return logger
 
