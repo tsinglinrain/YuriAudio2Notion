@@ -1,0 +1,19 @@
+[project]
+name = "yuri-audio2notion"
+version = "0.1.0"
+description = "Extract and sync metadata from Yuri audio dramas into Notion database."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.128.0",
+    "httpx>=0.28.1",
+    "notion-client>=2.7.0",
+    "python-dotenv>=1.2.1",
+    "uvicorn[standard]>=0.40.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "ruff>=0.14.14",
+]
