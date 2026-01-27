@@ -1,8 +1,12 @@
 FROM python:3.14.2-alpine AS builder
 
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+COPY pyproject.toml uv.lock ./
+
+RUN uv sync --frozen --no-dev --no-install-project
 
 FROM python:3.14.2-alpine
 WORKDIR /app
@@ -11,14 +15,14 @@ RUN apk add --no-cache curl
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=builder /usr/local /usr/local
+COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
-ENV PATH=/root/.local/bin:$PATH \
+ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-RUN chown -R appuser:appgroup /app /usr/local
+RUN chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 5050

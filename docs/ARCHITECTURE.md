@@ -42,7 +42,8 @@ YuriAudio2Notion/
 ├── .env.template
 ├── Dockerfile
 ├── compose.yml
-└── requirements.txt
+├── pyproject.toml                 # 项目配置与依赖声明
+└── uv.lock                        # 依赖锁定文件
 ```
 
 ## 分层架构

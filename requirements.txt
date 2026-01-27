@@ -1,6 +1,0 @@
-httpx
-python-dotenv
-notion-client
-fastapi
-uvicorn[standard]
-pydantic
