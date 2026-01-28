@@ -9,6 +9,7 @@ Notion数据上传服务
 from typing import Dict, Any, Optional
 
 from app.clients.notion import NotionClient
+from app.constants.notion_fields import AlbumField, AudioField
 from app.core.description_parser import DescriptionParser
 from app.core.image_upload import CoverUploader
 from app.services.fanjiao_service import FanjiaoService
@@ -200,9 +201,10 @@ class NotionService:
         """
         result: Dict[str, Any] = {}
         name = audio_data.get("name", "")
+        F = AudioField  # 简化引用
 
         # 处理封面相关字段
-        if "Cover" in update_fields:
+        if F.COVER in update_fields:
             cover_url = audio_data.get("cover_square", "")
             if cover_url:
                 cover_url = cover_url.split("?")[0]
@@ -212,13 +214,13 @@ class NotionService:
                     result["cover_id"] = await cover_uploader.image_upload()
 
         # 处理播放量
-        if "播放" in update_fields:
+        if F.PLAY in update_fields:
             result["play"] = audio_data.get("play", 0)
 
-        if "Description" in update_fields:
+        if F.DESCRIPTION in update_fields:
             result["description"] = audio_data.get("description", "")
 
-        if "Publish Date" in update_fields:
+        if F.PUBLISH_DATE in update_fields:
             publish_date = audio_data.get("publish_date", "")
             publish_date = publish_date.replace("+08:00", "Z")
             result["publish_date"] = publish_date
@@ -327,13 +329,14 @@ class NotionService:
         result: Dict[str, Any] = {}
         name = album_data.get("name", "")
         description = album_data.get("description", "")
+        F = AlbumField  # 简化引用
 
-        # ========== 标题类型 ==========
-        if "Name" in update_fields:
+        # 标题类型
+        if F.NAME in update_fields:
             result["name"] = name
 
-        # ========== 封面处理 (需要上传) ==========
-        if "Cover" in update_fields:
+        # 封面处理 (需要上传)
+        if F.COVER in update_fields:
             cover_url = album_data.get("cover", "")
             if cover_url:
                 cover_url = cover_url.split("?")[0]
@@ -342,7 +345,7 @@ class NotionService:
                 ) as cover_uploader:
                     result["cover"] = await cover_uploader.image_upload()
 
-        if "Cover_horizontal" in update_fields:
+        if F.COVER_HORIZONTAL in update_fields:
             cover_horizontal_url = album_data.get("cover_horizontal", "")
             if cover_horizontal_url:
                 cover_horizontal_url = cover_horizontal_url.split("?")[0]
@@ -351,7 +354,7 @@ class NotionService:
                 ) as cover_uploader:
                     result["cover_horizontal"] = await cover_uploader.image_upload()
 
-        if "Cover_square" in update_fields:
+        if F.COVER_SQUARE in update_fields:
             cover_square_url = album_data.get("cover_square", "")
             if cover_square_url:
                 cover_square_url = cover_square_url.split("?")[0]
@@ -360,57 +363,57 @@ class NotionService:
                 ) as cover_uploader:
                     result["cover_square"] = await cover_uploader.image_upload()
 
-        # ========== 数字类型 ==========
-        if "播放" in update_fields:
+        # 数字类型
+        if F.PLAY in update_fields:
             result["play"] = album_data.get("play", 0)
 
-        if "追剧" in update_fields:
+        if F.LIKED in update_fields:
             result["liked"] = album_data.get("liked", 0)
 
-        if "Price" in update_fields:
+        if F.PRICE in update_fields:
             result["ori_price"] = album_data.get("ori_price", 0)
 
-        if "Episode Count" in update_fields:
+        if F.EPISODE_COUNT in update_fields:
             parser = DescriptionParser(description)
             result["episode_count"] = parser.episode_count
 
-        # ========== 日期类型 ==========
-        if "Publish Date" in update_fields:
+        # 日期类型
+        if F.PUBLISH_DATE in update_fields:
             publish_date = album_data.get("publish_date", "")
             publish_date = publish_date.replace("+08:00", "Z")
             result["publish_date"] = publish_date
 
-        # ========== 富文本类型 ==========
-        if "简介" in update_fields or "简介续" in update_fields:
+        # 富文本类型
+        if F.DESCRIPTION in update_fields or F.DESCRIPTION_SEQUEL in update_fields:
             parser = DescriptionParser(description)
-            if "简介" in update_fields:
+            if F.DESCRIPTION in update_fields:
                 result["description"] = parser.main_description
-            if "简介续" in update_fields:
+            if F.DESCRIPTION_SEQUEL in update_fields:
                 result["description_sequel"] = parser.additional_info
 
-        # ========== 单选类型 ==========
-        if "原著" in update_fields:
+        # 单选类型
+        if F.AUTHOR in update_fields:
             result["author_name"] = album_data.get("author_name", "")
 
-        if "up主" in update_fields:
+        if F.UP_NAME in update_fields:
             result["up_name"] = album_data.get("up_name", "")
 
-        if "来源" in update_fields:
+        if F.SOURCE in update_fields:
             parser = DescriptionParser(description)
             result["source"] = "改编" if "原著" in parser.additional_info else "原创"
 
-        if "商剧" in update_fields:
+        if F.COMMERCIAL in update_fields:
             ori_price = album_data.get("ori_price", 0)
             result["commercial_drama"] = "商剧" if ori_price > 0 else "非商"
 
-        # ========== 多选类型 ==========
-        if "更新" in update_fields:
+        # 多选类型
+        if F.UPDATE_FREQ in update_fields:
             update_frequency = album_data.get("update_frequency", [])
             result["update_frequency"] = DescriptionParser.format_to_list(
                 update_frequency
             )
 
-        if "Tags" in update_fields:
+        if F.TAGS in update_fields:
             parser = DescriptionParser(description)
             result["tags"] = DescriptionParser.format_to_list(parser.tags)
 
@@ -418,29 +421,29 @@ class NotionService:
         main_cv_ori = album_data.get("main_cv", [])
         supporting_cv_ori = album_data.get("supporting_cv", [])
 
-        if "cv主役" in update_fields:
+        if F.MAIN_CV in update_fields:
             result["main_cv"] = FanjiaoService.format_list_data("name", main_cv_ori)
 
-        if "饰演角色" in update_fields:
+        if F.MAIN_CV_ROLE in update_fields:
             result["main_cv_role"] = FanjiaoService.format_list_data(
                 "role_name", main_cv_ori
             )
 
-        if "cv协役" in update_fields:
+        if F.SUPPORTING_CV in update_fields:
             result["supporting_cv"] = FanjiaoService.format_list_data(
                 "name", supporting_cv_ori
             )
 
-        if "协役饰演角色" in update_fields:
+        if F.SUPPORTING_CV_ROLE in update_fields:
             result["supporting_cv_role"] = FanjiaoService.format_list_data(
                 "role_name", supporting_cv_ori
             )
 
-        if "Platform" in update_fields:
+        if F.PLATFORM in update_fields:
             result["platform"] = "饭角"
 
-        # ========== URL类型 ==========
-        if "Album Link" in update_fields:
+        # URL类型
+        if F.ALBUM_LINK in update_fields:
             result["album_link"] = album_data.get("album_url", "")
 
         return result

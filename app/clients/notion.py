@@ -9,6 +9,7 @@ Notion API客户端
 from typing import Dict, Any, List, Optional
 from notion_client import AsyncClient
 
+from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.config import config
 from app.utils.logger import setup_logger
 
@@ -246,14 +247,15 @@ class NotionClient:
         """
         # 定义字段名到Notion属性的映射
         # 每个 lambda 接收 data 和 tz 参数
+        F = AlbumField  # 简化引用
         field_mapping: Dict[str, Any] = {
-            # ========== 标题类型 (title) ==========
-            "Name": lambda data, tz: {
-                "Name": {"title": [{"text": {"content": data.get("name", "")}}]}
+            # 标题类型 (title)
+            F.NAME: lambda data, tz: {
+                F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]}
             },
-            # ========== 文件类型 (files) ==========
-            "Cover": lambda data, tz: {
-                "Cover": {
+            # 文件类型 (files)
+            F.COVER: lambda data, tz: {
+                F.COVER: {
                     "files": [
                         {
                             "type": "file_upload",
@@ -264,8 +266,8 @@ class NotionClient:
             }
             if data.get("cover")
             else {},
-            "Cover_horizontal": lambda data, tz: {
-                "Cover_horizontal": {
+            F.COVER_HORIZONTAL: lambda data, tz: {
+                F.COVER_HORIZONTAL: {
                     "files": [
                         {
                             "type": "file_upload",
@@ -276,8 +278,8 @@ class NotionClient:
             }
             if data.get("cover_horizontal")
             else {},
-            "Cover_square": lambda data, tz: {
-                "Cover_square": {
+            F.COVER_SQUARE: lambda data, tz: {
+                F.COVER_SQUARE: {
                     "files": [
                         {
                             "type": "file_upload",
@@ -288,16 +290,16 @@ class NotionClient:
             }
             if data.get("cover_square")
             else {},
-            # ========== 数字类型 (number) ==========
-            "播放": lambda data, tz: {"播放": {"number": data.get("play", 0)}},
-            "追剧": lambda data, tz: {"追剧": {"number": data.get("liked", 0)}},
-            "Price": lambda data, tz: {"Price": {"number": data.get("ori_price", 0)}},
-            "Episode Count": lambda data, tz: {
-                "Episode Count": {"number": data.get("episode_count", 0)}
+            # 数字类型 (number)
+            F.PLAY: lambda data, tz: {F.PLAY: {"number": data.get("play", 0)}},
+            F.LIKED: lambda data, tz: {F.LIKED: {"number": data.get("liked", 0)}},
+            F.PRICE: lambda data, tz: {F.PRICE: {"number": data.get("ori_price", 0)}},
+            F.EPISODE_COUNT: lambda data, tz: {
+                F.EPISODE_COUNT: {"number": data.get("episode_count", 0)}
             },
-            # ========== 日期类型 (date) ==========
-            "Publish Date": lambda data, tz: {
-                "Publish Date": {
+            # 日期类型 (date)
+            F.PUBLISH_DATE: lambda data, tz: {
+                F.PUBLISH_DATE: {
                     "date": {
                         "start": data.get("publish_date", ""),
                         "time_zone": tz,
@@ -306,59 +308,65 @@ class NotionClient:
             }
             if data.get("publish_date")
             else {},
-            # ========== 富文本类型 (rich_text) ==========
-            "简介": lambda data, tz: {
-                "简介": {"rich_text": [{"text": {"content": data.get("description", "")}}]}
-            },
-            "简介续": lambda data, tz: {
-                "简介续": {
-                    "rich_text": [{"text": {"content": data.get("description_sequel", "")}}]
+            # 富文本类型 (rich_text)
+            F.DESCRIPTION: lambda data, tz: {
+                F.DESCRIPTION: {
+                    "rich_text": [{"text": {"content": data.get("description", "")}}]
                 }
             },
-            # ========== 单选类型 (select) ==========
-            "原著": lambda data, tz: {
-                "原著": {"select": {"name": data.get("author_name", "")}}
+            F.DESCRIPTION_SEQUEL: lambda data, tz: {
+                F.DESCRIPTION_SEQUEL: {
+                    "rich_text": [
+                        {"text": {"content": data.get("description_sequel", "")}}
+                    ]
+                }
+            },
+            # 单选类型 (select)
+            F.AUTHOR: lambda data, tz: {
+                F.AUTHOR: {"select": {"name": data.get("author_name", "")}}
             }
             if data.get("author_name")
             else {},
-            "up主": lambda data, tz: {
-                "up主": {"select": {"name": data.get("up_name", "")}}
+            F.UP_NAME: lambda data, tz: {
+                F.UP_NAME: {"select": {"name": data.get("up_name", "")}}
             }
             if data.get("up_name")
             else {},
-            "来源": lambda data, tz: {
-                "来源": {"select": {"name": data.get("source", "")}}
+            F.SOURCE: lambda data, tz: {
+                F.SOURCE: {"select": {"name": data.get("source", "")}}
             }
             if data.get("source")
             else {},
-            "商剧": lambda data, tz: {
-                "商剧": {"select": {"name": data.get("commercial_drama", "")}}
+            F.COMMERCIAL: lambda data, tz: {
+                F.COMMERCIAL: {"select": {"name": data.get("commercial_drama", "")}}
             }
             if data.get("commercial_drama")
             else {},
-            # ========== 多选类型 (multi_select) ==========
-            "更新": lambda data, tz: {
-                "更新": {"multi_select": data.get("update_frequency", [])}
+            # 多选类型 (multi_select)
+            F.UPDATE_FREQ: lambda data, tz: {
+                F.UPDATE_FREQ: {"multi_select": data.get("update_frequency", [])}
             },
-            "Tags": lambda data, tz: {"Tags": {"multi_select": data.get("tags", [])}},
-            "cv主役": lambda data, tz: {
-                "cv主役": {"multi_select": data.get("main_cv", [])}
+            F.TAGS: lambda data, tz: {F.TAGS: {"multi_select": data.get("tags", [])}},
+            F.MAIN_CV: lambda data, tz: {
+                F.MAIN_CV: {"multi_select": data.get("main_cv", [])}
             },
-            "饰演角色": lambda data, tz: {
-                "饰演角色": {"multi_select": data.get("main_cv_role", [])}
+            F.MAIN_CV_ROLE: lambda data, tz: {
+                F.MAIN_CV_ROLE: {"multi_select": data.get("main_cv_role", [])}
             },
-            "cv协役": lambda data, tz: {
-                "cv协役": {"multi_select": data.get("supporting_cv", [])}
+            F.SUPPORTING_CV: lambda data, tz: {
+                F.SUPPORTING_CV: {"multi_select": data.get("supporting_cv", [])}
             },
-            "协役饰演角色": lambda data, tz: {
-                "协役饰演角色": {"multi_select": data.get("supporting_cv_role", [])}
+            F.SUPPORTING_CV_ROLE: lambda data, tz: {
+                F.SUPPORTING_CV_ROLE: {
+                    "multi_select": data.get("supporting_cv_role", [])
+                }
             },
-            "Platform": lambda data, tz: {
-                "Platform": {"multi_select": [{"name": data.get("platform", "饭角")}]}
+            F.PLATFORM: lambda data, tz: {
+                F.PLATFORM: {"multi_select": [{"name": data.get("platform", "饭角")}]}
             },
-            # ========== URL类型 (url) ==========
-            "Album Link": lambda data, tz: {
-                "Album Link": {"url": data.get("album_link", "")}
+            # URL类型 (url)
+            F.ALBUM_LINK: lambda data, tz: {
+                F.ALBUM_LINK: {"url": data.get("album_link", "")}
             }
             if data.get("album_link")
             else {},
@@ -391,10 +399,11 @@ class NotionClient:
             Notion音频页面属性字典（仅包含需要更新的字段）
         """
         # 定义字段名到Notion属性的映射
-        field_mapping = {
+        F = AudioField  # 简化引用
+        field_mapping: Dict[str, Any] = {
             # 封面相关
-            "Cover": lambda data: {
-                "Cover": {
+            F.COVER: lambda data: {
+                F.COVER: {
                     "files": [
                         {
                             "type": "file_upload",
@@ -404,16 +413,16 @@ class NotionClient:
                 }
             },
             # 播放量
-            "播放": lambda data: {"播放": {"number": data.get("play", 0)}},
+            F.PLAY: lambda data: {F.PLAY: {"number": data.get("play", 0)}},
             # 描述
-            "Description": lambda data: {
-                "Description": {
+            F.DESCRIPTION: lambda data: {
+                F.DESCRIPTION: {
                     "rich_text": [{"text": {"content": data.get("description", "")}}]
                 }
             },
             # 发布日期
-            "Publish Date": lambda data: {
-                "Publish Date": {
+            F.PUBLISH_DATE: lambda data: {
+                F.PUBLISH_DATE: {
                     "date": {
                         "start": data.get("publish_date", ""),
                         "time_zone": data.get("time_zone", time_zone),
