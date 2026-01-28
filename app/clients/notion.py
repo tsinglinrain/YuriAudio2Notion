@@ -227,22 +227,44 @@ class NotionClient:
     @staticmethod
     def build_partial_properties(
         update_fields: List[str],
+        time_zone: str = "Asia/Shanghai",
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         根据需要更新的字段动态构建Notion页面属性
 
+        支持所有可更新且 Fanjiao API 提供的字段。
+        不支持的类型：formula、button、created_time、relation
+
         Args:
             update_fields: 需要更新的字段列表
+            time_zone: 时区，默认 Asia/Shanghai
             **kwargs: 字段对应的值
 
         Returns:
             Notion页面属性字典（仅包含需要更新的字段）
         """
         # 定义字段名到Notion属性的映射
-        field_mapping = {
-            # 封面相关
-            "Cover_horizontal": lambda data: {
+        # 每个 lambda 接收 data 和 tz 参数
+        field_mapping: Dict[str, Any] = {
+            # ========== 标题类型 (title) ==========
+            "Name": lambda data, tz: {
+                "Name": {"title": [{"text": {"content": data.get("name", "")}}]}
+            },
+            # ========== 文件类型 (files) ==========
+            "Cover": lambda data, tz: {
+                "Cover": {
+                    "files": [
+                        {
+                            "type": "file_upload",
+                            "file_upload": {"id": data.get("cover", "")},
+                        }
+                    ]
+                }
+            }
+            if data.get("cover")
+            else {},
+            "Cover_horizontal": lambda data, tz: {
                 "Cover_horizontal": {
                     "files": [
                         {
@@ -251,8 +273,10 @@ class NotionClient:
                         }
                     ]
                 }
-            },
-            "Cover_square": lambda data: {
+            }
+            if data.get("cover_horizontal")
+            else {},
+            "Cover_square": lambda data, tz: {
                 "Cover_square": {
                     "files": [
                         {
@@ -261,19 +285,92 @@ class NotionClient:
                         }
                     ]
                 }
+            }
+            if data.get("cover_square")
+            else {},
+            # ========== 数字类型 (number) ==========
+            "播放": lambda data, tz: {"播放": {"number": data.get("play", 0)}},
+            "追剧": lambda data, tz: {"追剧": {"number": data.get("liked", 0)}},
+            "Price": lambda data, tz: {"Price": {"number": data.get("ori_price", 0)}},
+            "Episode Count": lambda data, tz: {
+                "Episode Count": {"number": data.get("episode_count", 0)}
             },
-            # 播放量
-            "播放": lambda data: {"播放": {"number": data.get("play", 0)}},
-            # 追剧（订阅/收藏）
-            "追剧": lambda data: {"追剧": {"number": data.get("liked", 0)}},
+            # ========== 日期类型 (date) ==========
+            "Publish Date": lambda data, tz: {
+                "Publish Date": {
+                    "date": {
+                        "start": data.get("publish_date", ""),
+                        "time_zone": tz,
+                    }
+                }
+            }
+            if data.get("publish_date")
+            else {},
+            # ========== 富文本类型 (rich_text) ==========
+            "简介": lambda data, tz: {
+                "简介": {"rich_text": [{"text": {"content": data.get("description", "")}}]}
+            },
+            "简介续": lambda data, tz: {
+                "简介续": {
+                    "rich_text": [{"text": {"content": data.get("description_sequel", "")}}]
+                }
+            },
+            # ========== 单选类型 (select) ==========
+            "原著": lambda data, tz: {
+                "原著": {"select": {"name": data.get("author_name", "")}}
+            }
+            if data.get("author_name")
+            else {},
+            "up主": lambda data, tz: {
+                "up主": {"select": {"name": data.get("up_name", "")}}
+            }
+            if data.get("up_name")
+            else {},
+            "来源": lambda data, tz: {
+                "来源": {"select": {"name": data.get("source", "")}}
+            }
+            if data.get("source")
+            else {},
+            "商剧": lambda data, tz: {
+                "商剧": {"select": {"name": data.get("commercial_drama", "")}}
+            }
+            if data.get("commercial_drama")
+            else {},
+            # ========== 多选类型 (multi_select) ==========
+            "更新": lambda data, tz: {
+                "更新": {"multi_select": data.get("update_frequency", [])}
+            },
+            "Tags": lambda data, tz: {"Tags": {"multi_select": data.get("tags", [])}},
+            "cv主役": lambda data, tz: {
+                "cv主役": {"multi_select": data.get("main_cv", [])}
+            },
+            "饰演角色": lambda data, tz: {
+                "饰演角色": {"multi_select": data.get("main_cv_role", [])}
+            },
+            "cv协役": lambda data, tz: {
+                "cv协役": {"multi_select": data.get("supporting_cv", [])}
+            },
+            "协役饰演角色": lambda data, tz: {
+                "协役饰演角色": {"multi_select": data.get("supporting_cv_role", [])}
+            },
+            "Platform": lambda data, tz: {
+                "Platform": {"multi_select": [{"name": data.get("platform", "饭角")}]}
+            },
+            # ========== URL类型 (url) ==========
+            "Album Link": lambda data, tz: {
+                "Album Link": {"url": data.get("album_link", "")}
+            }
+            if data.get("album_link")
+            else {},
         }
 
         properties: Dict[str, Any] = {}
 
         for field in update_fields:
             if field in field_mapping:
-                field_props = field_mapping[field](kwargs)
-                properties.update(field_props)
+                field_props = field_mapping[field](kwargs, time_zone)
+                if field_props:  # 只添加非空属性
+                    properties.update(field_props)
 
         return properties
 

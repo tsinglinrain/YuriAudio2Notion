@@ -314,7 +314,8 @@ class NotionService:
         """
         根据需要更新的字段准备数据（异步）
 
-        只处理需要的字段，避免不必要的API调用
+        只处理需要的字段，避免不必要的API调用。
+        支持所有可更新且 Fanjiao API 提供的字段。
 
         Args:
             album_data: 从Fanjiao获取的原始数据
@@ -325,8 +326,22 @@ class NotionService:
         """
         result: Dict[str, Any] = {}
         name = album_data.get("name", "")
+        description = album_data.get("description", "")
 
-        # 处理封面相关字段
+        # ========== 标题类型 ==========
+        if "Name" in update_fields:
+            result["name"] = name
+
+        # ========== 封面处理 (需要上传) ==========
+        if "Cover" in update_fields:
+            cover_url = album_data.get("cover", "")
+            if cover_url:
+                cover_url = cover_url.split("?")[0]
+                async with CoverUploader(
+                    image_url=cover_url, image_name=name
+                ) as cover_uploader:
+                    result["cover"] = await cover_uploader.image_upload()
+
         if "Cover_horizontal" in update_fields:
             cover_horizontal_url = album_data.get("cover_horizontal", "")
             if cover_horizontal_url:
@@ -345,13 +360,88 @@ class NotionService:
                 ) as cover_uploader:
                     result["cover_square"] = await cover_uploader.image_upload()
 
-        # 处理播放量
+        # ========== 数字类型 ==========
         if "播放" in update_fields:
             result["play"] = album_data.get("play", 0)
 
-        # 处理追剧/订阅数
         if "追剧" in update_fields:
             result["liked"] = album_data.get("liked", 0)
+
+        if "Price" in update_fields:
+            result["ori_price"] = album_data.get("ori_price", 0)
+
+        if "Episode Count" in update_fields:
+            parser = DescriptionParser(description)
+            result["episode_count"] = parser.episode_count
+
+        # ========== 日期类型 ==========
+        if "Publish Date" in update_fields:
+            publish_date = album_data.get("publish_date", "")
+            publish_date = publish_date.replace("+08:00", "Z")
+            result["publish_date"] = publish_date
+
+        # ========== 富文本类型 ==========
+        if "简介" in update_fields or "简介续" in update_fields:
+            parser = DescriptionParser(description)
+            if "简介" in update_fields:
+                result["description"] = parser.main_description
+            if "简介续" in update_fields:
+                result["description_sequel"] = parser.additional_info
+
+        # ========== 单选类型 ==========
+        if "原著" in update_fields:
+            result["author_name"] = album_data.get("author_name", "")
+
+        if "up主" in update_fields:
+            result["up_name"] = album_data.get("up_name", "")
+
+        if "来源" in update_fields:
+            parser = DescriptionParser(description)
+            result["source"] = "改编" if "原著" in parser.additional_info else "原创"
+
+        if "商剧" in update_fields:
+            ori_price = album_data.get("ori_price", 0)
+            result["commercial_drama"] = "商剧" if ori_price > 0 else "非商"
+
+        # ========== 多选类型 ==========
+        if "更新" in update_fields:
+            update_frequency = album_data.get("update_frequency", [])
+            result["update_frequency"] = DescriptionParser.format_to_list(
+                update_frequency
+            )
+
+        if "Tags" in update_fields:
+            parser = DescriptionParser(description)
+            result["tags"] = DescriptionParser.format_to_list(parser.tags)
+
+        # CV 相关处理
+        main_cv_ori = album_data.get("main_cv", [])
+        supporting_cv_ori = album_data.get("supporting_cv", [])
+
+        if "cv主役" in update_fields:
+            result["main_cv"] = FanjiaoService.format_list_data("name", main_cv_ori)
+
+        if "饰演角色" in update_fields:
+            result["main_cv_role"] = FanjiaoService.format_list_data(
+                "role_name", main_cv_ori
+            )
+
+        if "cv协役" in update_fields:
+            result["supporting_cv"] = FanjiaoService.format_list_data(
+                "name", supporting_cv_ori
+            )
+
+        if "协役饰演角色" in update_fields:
+            result["supporting_cv_role"] = FanjiaoService.format_list_data(
+                "role_name", supporting_cv_ori
+            )
+
+        if "Platform" in update_fields:
+            result["platform"] = "饭角"
+
+        # ========== URL类型 ==========
+        if "Album Link" in update_fields:
+            result["album_link"] = album_data.get("album_url", "")
 
         return result
 
