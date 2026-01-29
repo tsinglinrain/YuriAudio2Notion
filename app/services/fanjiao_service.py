@@ -39,6 +39,10 @@ class FanjiaoService:
             处理后的专辑数据，失败返回None
         """
         try:
+            if album_id is None:
+                logger.error("album_id is None")
+                return None
+
             # 并发获取专辑数据和CV数据
             album_raw, cv_raw = await asyncio.gather(
                 self.album_client.fetch_album(album_id),
