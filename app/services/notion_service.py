@@ -331,6 +331,21 @@ class NotionService:
         description = album_data.get("description", "")
         F = AlbumField  # 简化引用
 
+        # 需要 DescriptionParser 的字段集合
+        parser_fields = {
+            F.EPISODE_COUNT,
+            F.DESCRIPTION,
+            F.DESCRIPTION_SEQUEL,
+            F.SOURCE,
+            F.TAGS,
+        }
+        # 仅当需要时才创建 parser（避免重复解析）
+        parser = (
+            DescriptionParser(description)
+            if parser_fields & set(update_fields)
+            else None
+        )
+
         # 标题类型
         if F.NAME in update_fields:
             result["name"] = name
@@ -373,8 +388,7 @@ class NotionService:
         if F.PRICE in update_fields:
             result["ori_price"] = album_data.get("ori_price", 0)
 
-        if F.EPISODE_COUNT in update_fields:
-            parser = DescriptionParser(description)
+        if F.EPISODE_COUNT in update_fields and parser:
             result["episode_count"] = parser.episode_count
 
         # 日期类型
@@ -384,8 +398,7 @@ class NotionService:
             result["publish_date"] = publish_date
 
         # 富文本类型
-        if F.DESCRIPTION in update_fields or F.DESCRIPTION_SEQUEL in update_fields:
-            parser = DescriptionParser(description)
+        if parser:
             if F.DESCRIPTION in update_fields:
                 result["description"] = parser.main_description
             if F.DESCRIPTION_SEQUEL in update_fields:
@@ -398,8 +411,7 @@ class NotionService:
         if F.UP_NAME in update_fields:
             result["up_name"] = album_data.get("up_name", "")
 
-        if F.SOURCE in update_fields:
-            parser = DescriptionParser(description)
+        if F.SOURCE in update_fields and parser:
             result["source"] = "改编" if "原著" in parser.additional_info else "原创"
 
         if F.COMMERCIAL in update_fields:
@@ -413,8 +425,7 @@ class NotionService:
                 update_frequency
             )
 
-        if F.TAGS in update_fields:
-            parser = DescriptionParser(description)
+        if F.TAGS in update_fields and parser:
             result["tags"] = DescriptionParser.format_to_list(parser.tags)
 
         # CV 相关处理
