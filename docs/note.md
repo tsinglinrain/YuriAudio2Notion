@@ -259,6 +259,63 @@ subtitle
 
 # 更新的强化
 
+## 需求分析
+
+有时候界面已经完成了基本的更新，但是有些数据的更新并不及时。
+现有的`webhook`只会把所有的内容全部来一遍，但是现在我需要对某些属性进行特定更新.
+
+因此需要增加新的`webhook`
+
+## 基本思路梳理
+
+目前的上传其实就是界面page的更新，但是会把很多属性全部塞进去，可以在这里进行改动。
+
+其实之前有个子问题，需要解决，但是没解决。
+
+- [x] 基本解决，multi-select空的能上传, 但是select不行
+
+processed_data = self._prepare_data(album_data)
+
+
+## 客户端操作梳理
+
+编辑按钮，
+
+找到想要上传的更新内容，进行更新。
+
+我Notion端只能向服务端传达我需要更新的内容，不能说我要更新这个，我就把这个传递过去，
+
+我想到的一个思路是设置一个`multi select` property, 随后想要更新什么就在里面选择什么
+
+```json
+    "Update_selection": {
+      "id": "H%5EXV",
+      "type": "multi_select",
+      "multi_select": [
+        {
+          "id": "611fa5fc-14b9-4455-b93e-75c860a67d88",
+          "name": "Cover_horizontal",
+          "color": "orange"
+        },
+        {
+          "id": "34fca6d0-f31c-45c6-9220-fd076503ca72",
+          "name": "Cover_square",
+          "color": "blue"
+        },
+        {
+          "id": "db002288-85ae-408a-a9eb-43a6240fe1bc",
+          "name": "播放",
+          "color": "gray"
+        },
+        {
+          "id": "9ea7a7b2-1a85-45dd-a86f-8209fab367a2",
+          "name": "追剧",
+          "color": "purple"
+        }
+      ]
+    }
+```
+
 - [x] 更新需求如下：
 
   Notion Data source 的全部property为`data\notion_data_source_info.json`, 
