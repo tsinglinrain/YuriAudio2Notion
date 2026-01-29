@@ -255,6 +255,17 @@ subtitle
 - [x] 目前上传部分代码基本完成, 但是description部分拆分不了。只能手动进行拆分。
 
 - [ ] 图片icon，似乎只能emoji, 没有解决办法。
+  - [ ] 找到解决办法了，实际上Retrieve_a_data_source,久能发现其实一个图床连接，没有什么规律性，需要retrieve
+
+# 更新的强化
+
+- [x] 更新需求如下：
+
+  Notion Data source 的全部property为`data\notion_data_source_info.json`, 
+
+  需要实现`NotionService.update_partial_album_data(...)`对任意数据库中的property实现更新，其中property中不包括公式和Fanjiao API中不存在的。
+
+  解决办法是引入`from enum import StrEnum`, 主役要求python3.11+
 
 
 # Acknowledgement
