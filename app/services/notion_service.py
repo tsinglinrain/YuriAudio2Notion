@@ -203,6 +203,9 @@ class NotionService:
         name = audio_data.get("name", "")
         F = AudioField  # 简化引用
 
+        if F.NAME in update_fields:
+            result["name"] = name
+
         # 处理封面相关字段
         if F.COVER in update_fields:
             cover_url = audio_data.get("cover_square", "")

@@ -401,6 +401,10 @@ class NotionClient:
         # 定义字段名到Notion属性的映射
         F = AudioField  # 简化引用
         field_mapping: Dict[str, Any] = {
+            # 标题类型 (title)
+            F.NAME: lambda data: {
+                F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]}
+            },
             # 封面相关
             F.COVER: lambda data: {
                 F.COVER: {
