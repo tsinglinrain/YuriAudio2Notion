@@ -245,11 +245,15 @@ class NotionService:
 
         # cover上传
         cover_url = album_data.get("cover", "")
-        cover_url = cover_url.split("?")[0]  # 获取封面 URL 并去除参数
-        async with CoverUploader(
-            image_url=cover_url, image_name=name
-        ) as cover_uploader:
-            cover_file_id = await cover_uploader.image_upload()
+        cover_url = cover_url.split("?")[0] if cover_url else ""
+        if cover_url:
+            async with CoverUploader(
+                image_url=cover_url, image_name=name
+            ) as cover_uploader:
+                cover_file_id = await cover_uploader.image_upload()
+        else:
+            logger.warning(f"Cover URL is empty for album: {name}, skipping cover upload")
+            cover_file_id = None
 
         # 解析描述
         parser = DescriptionParser(description)
@@ -479,11 +483,15 @@ class NotionService:
 
         # cover上传
         cover_url = audio_data.get("cover_square", "")
-        cover_url = cover_url.split("?")[0]  # 获取封面 URL 并去除参数
-        async with CoverUploader(
-            image_url=cover_url, image_name=name
-        ) as cover_uploader:
-            cover_file_id = await cover_uploader.image_upload()
+        cover_url = cover_url.split("?")[0] if cover_url else ""
+        if cover_url:
+            async with CoverUploader(
+                image_url=cover_url, image_name=name
+            ) as cover_uploader:
+                cover_file_id = await cover_uploader.image_upload()
+        else:
+            logger.warning(f"Cover URL is empty for audio: {name}, skipping cover upload")
+            cover_file_id = None
 
         return {
             "name": name,

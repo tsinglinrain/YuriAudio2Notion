@@ -162,7 +162,7 @@ class NotionClient:
         """
         return {
             "Name": {"title": [{"text": {"content": name}}]},
-            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]},
+            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]} if cover else {"files": []},
             "简介": {"rich_text": [{"text": {"content": description}}]},
             "简介续": {"rich_text": [{"text": {"content": description_sequel}}]},
             "Publish Date": {
@@ -173,8 +173,8 @@ class NotionClient:
             },
             "更新": {"multi_select": update_frequency},
             "Price": {"number": ori_price},
-            "原著": {"select": {"name": author_name}},
-            "up主": {"select": {"name": up_name}},
+            "原著": {"select": {"name": author_name}} if author_name else {"select": None},
+            "up主": {"select": {"name": up_name}} if up_name else {"select": None},
             "Tags": {"multi_select": tags},
             "来源": {"select": {"name": source}},
             "cv主役": {"multi_select": main_cv},
@@ -220,7 +220,7 @@ class NotionClient:
                 }
             },
             "Description": {"rich_text": [{"text": {"content": description}}]},
-            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]},
+            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]} if cover else {"files": []},
             "播放": {"number": play},
             "Platform": {"multi_select": [{"name": platform}]},
         }
