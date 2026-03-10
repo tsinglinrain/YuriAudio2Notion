@@ -206,15 +206,17 @@ class NotionService:
         if F.NAME in update_fields:
             result["name"] = name
 
-        # 处理封面相关字段
+        # 处理封面相关字段，square 为空时 fallback 到 cover
         if F.COVER in update_fields:
-            cover_url = audio_data.get("cover_square", "")
+            cover_url = audio_data.get("cover_square", "") or audio_data.get("cover", "")
             if cover_url:
                 cover_url = cover_url.split("?")[0]
                 async with CoverUploader(
                     image_url=cover_url, image_name=name
                 ) as cover_uploader:
                     result["cover_id"] = await cover_uploader.image_upload()
+            else:
+                logger.warning(f"Both cover_square and cover are empty for audio: {name}, skipping cover upload")
 
         # 处理播放量
         if F.PLAY in update_fields:
@@ -484,8 +486,8 @@ class NotionService:
         publish_date = publish_date.replace("+08:00", "Z")
         play = audio_data.get("play", 0)
 
-        # cover上传
-        cover_url = audio_data.get("cover_square", "")
+        # cover上传，square 为空时 fallback 到 cover
+        cover_url = audio_data.get("cover_square", "") or audio_data.get("cover", "")
         cover_url = cover_url.split("?")[0] if cover_url else ""
         if cover_url:
             async with CoverUploader(

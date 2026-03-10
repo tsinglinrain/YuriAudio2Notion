@@ -415,7 +415,9 @@ class NotionClient:
                         }
                     ]
                 }
-            },
+            }
+            if data.get("cover_id")
+            else {},
             # 播放量
             F.PLAY: lambda data: {F.PLAY: {"number": data.get("play", 0)}},
             # 描述
