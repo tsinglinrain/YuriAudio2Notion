@@ -6,19 +6,38 @@ API路由定义
 包含所有webhook端点
 """
 
-from typing import Any
+import json
+import time
+from typing import Any, AsyncGenerator
 from fastapi import APIRouter, Header, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from urllib.parse import urlparse, parse_qs
 
 from app.core.processor import AlbumProcessor, AudioProcessor
+from app.core.log_broadcaster import get_broadcaster
 from app.api.middlewares import verify_api_key
 from app.utils.logger import setup_logger
+from app.utils.config import config
 
 logger = setup_logger(__name__)
 
 # 创建路由器
 router = APIRouter()
+
+# 服务启动时间（由 main.py 设置）
+_start_time: float | None = None
+
+
+def set_start_time(start_time: float) -> None:
+    """设置服务启动时间"""
+    global _start_time
+    _start_time = start_time
+
+
+def get_start_time() -> float | None:
+    """获取服务启动时间"""
+    return _start_time
 
 
 # Pydantic 模型定义
@@ -46,8 +65,73 @@ class WebhookResponse(BaseModel):
 
 @router.get("/")
 async def index() -> str:
-    """健康检查端点"""
+    """简单健康检查端点"""
     return "YuriAudio2Notion webhook server is running"
+
+
+@router.get("/health")
+async def health_check() -> dict[str, Any]:
+    """
+    增强的健康检查端点
+    返回服务状态、版本、运行时间等信息
+    """
+    start_time = get_start_time()
+    uptime_seconds = time.time() - start_time if start_time else 0
+
+    # 格式化运行时间
+    days, remainder = divmod(int(uptime_seconds), 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    if days > 0:
+        uptime_str = f"{days}d {hours}h {minutes}m {seconds}s"
+    elif hours > 0:
+        uptime_str = f"{hours}h {minutes}m {seconds}s"
+    elif minutes > 0:
+        uptime_str = f"{minutes}m {seconds}s"
+    else:
+        uptime_str = f"{seconds}s"
+
+    broadcaster = get_broadcaster()
+
+    return {
+        "status": "healthy",
+        "version": "2.0.0",
+        "environment": config.ENV,
+        "uptime": uptime_str,
+        "uptime_seconds": int(uptime_seconds),
+        "log_subscribers": broadcaster.subscriber_count,
+    }
+
+
+async def log_event_generator() -> AsyncGenerator[str, None]:
+    """
+    SSE 日志事件生成器
+    """
+    broadcaster = get_broadcaster()
+
+    async for entry in broadcaster.subscribe():
+        data = json.dumps(entry.to_dict(), ensure_ascii=False)
+        yield f"data: {data}\n\n"
+
+
+@router.get("/logs/stream")
+async def logs_stream() -> StreamingResponse:
+    """
+    SSE 实时日志推送端点
+    返回 Server-Sent Events 格式的日志流
+    """
+    logger.info("New SSE log stream connection established")
+
+    return StreamingResponse(
+        log_event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/webhook-data-source", dependencies=[Depends(verify_api_key)])
