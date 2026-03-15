@@ -76,3 +76,8 @@ class AudioField(StrEnum):
 
     # ========== 多选类型 (multi_select) ==========
     PLATFORM = "Platform"
+    SINGER = "演唱"
+    LYRICIST = "作词"
+    COMPOSER = "作曲"
+    ARRANGER = "编曲"
+    MIXER = "混音"

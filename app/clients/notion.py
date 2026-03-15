@@ -194,6 +194,11 @@ class NotionClient:
         description: str,
         cover: str,
         play: int,
+        singer: Optional[List[dict]] = None,
+        lyricist: Optional[List[dict]] = None,
+        composer: Optional[List[dict]] = None,
+        arranger: Optional[List[dict]] = None,
+        mixer: Optional[List[dict]] = None,
         platform: str = "饭角",
         time_zone: str = "Asia/Shanghai",
     ) -> Dict[str, Any]:
@@ -205,6 +210,11 @@ class NotionClient:
             publish_date: 发布日期
             description: 描述
             cover: 封面
+            singer: 演唱
+            lyricist: 作词
+            composer: 作曲
+            arranger: 编曲
+            mixer: 混音
             platform: 平台
             time_zone: 时区
 
@@ -222,6 +232,11 @@ class NotionClient:
             "Description": {"rich_text": [{"text": {"content": description}}]},
             "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]} if cover else {"files": []},
             "播放": {"number": play},
+            "演唱": {"multi_select": singer or []},
+            "作词": {"multi_select": lyricist or []},
+            "作曲": {"multi_select": composer or []},
+            "编曲": {"multi_select": arranger or []},
+            "混音": {"multi_select": mixer or []},
             "Platform": {"multi_select": [{"name": platform}]},
         }
 
@@ -435,6 +450,12 @@ class NotionClient:
                     }
                 }
             },
+            # 音乐制作信息（multi_select）
+            F.SINGER: lambda data: {F.SINGER: {"multi_select": data.get("singer", [])}},
+            F.LYRICIST: lambda data: {F.LYRICIST: {"multi_select": data.get("lyricist", [])}},
+            F.COMPOSER: lambda data: {F.COMPOSER: {"multi_select": data.get("composer", [])}},
+            F.ARRANGER: lambda data: {F.ARRANGER: {"multi_select": data.get("arranger", [])}},
+            F.MIXER: lambda data: {F.MIXER: {"multi_select": data.get("mixer", [])}},
         }
 
         properties: Dict[str, Any] = {}
