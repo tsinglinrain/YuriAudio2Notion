@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional
 from app.clients.notion import NotionClient
 from app.constants.notion_fields import AlbumField, AudioField
 from app.core.description_parser import DescriptionParser
+from app.core.description_audio_parser import DescriptionAudioParser
 from app.core.image_upload import CoverUploader
 from app.services.fanjiao_service import FanjiaoService
 from app.utils.logger import setup_logger
@@ -208,7 +209,9 @@ class NotionService:
 
         # 处理封面相关字段，square 为空时 fallback 到 cover
         if F.COVER in update_fields:
-            cover_url = audio_data.get("cover_square", "") or audio_data.get("cover", "")
+            cover_url = audio_data.get("cover_square", "") or audio_data.get(
+                "cover", ""
+            )
             if cover_url:
                 cover_url = cover_url.split("?")[0]
                 async with CoverUploader(
@@ -216,7 +219,9 @@ class NotionService:
                 ) as cover_uploader:
                     result["cover_id"] = await cover_uploader.image_upload()
             else:
-                logger.warning(f"Both cover_square and cover are empty for audio: {name}, skipping cover upload")
+                logger.warning(
+                    f"Both cover_square and cover are empty for audio: {name}, skipping cover upload"
+                )
 
         # 处理播放量
         if F.PLAY in update_fields:
@@ -224,6 +229,33 @@ class NotionService:
 
         if F.DESCRIPTION in update_fields:
             result["description"] = audio_data.get("description", "")
+
+        # 音乐制作信息字段：从 description 解析，按需延迟创建解析器
+        credits_fields = {F.SINGER, F.LYRICIST, F.COMPOSER, F.ARRANGER, F.MIXER, F.LYRICS}
+        credits = (
+            DescriptionAudioParser(audio_data.get("description", ""))
+            if credits_fields & set(update_fields)
+            else None
+        )
+        if credits:
+            if F.SINGER in update_fields:
+                result["singer"] = DescriptionAudioParser.format_to_list(credits.singer)
+            if F.LYRICIST in update_fields:
+                result["lyricist"] = DescriptionAudioParser.format_to_list(
+                    credits.lyricist
+                )
+            if F.COMPOSER in update_fields:
+                result["composer"] = DescriptionAudioParser.format_to_list(
+                    credits.composer
+                )
+            if F.ARRANGER in update_fields:
+                result["arranger"] = DescriptionAudioParser.format_to_list(
+                    credits.arranger
+                )
+            if F.MIXER in update_fields:
+                result["mixer"] = DescriptionAudioParser.format_to_list(credits.mixer)
+            if F.LYRICS in update_fields:
+                result["lyrics"] = credits.lyrics
 
         if F.PUBLISH_DATE in update_fields:
             publish_date = audio_data.get("publish_date", "")
@@ -257,7 +289,9 @@ class NotionService:
             ) as cover_uploader:
                 cover_file_id = await cover_uploader.image_upload()
         else:
-            logger.warning(f"Cover URL is empty for album: {name}, skipping cover upload")
+            logger.warning(
+                f"Cover URL is empty for album: {name}, skipping cover upload"
+            )
             cover_file_id = None
 
         # 解析描述
@@ -495,8 +529,13 @@ class NotionService:
             ) as cover_uploader:
                 cover_file_id = await cover_uploader.image_upload()
         else:
-            logger.warning(f"Cover URL is empty for audio: {name}, skipping cover upload")
+            logger.warning(
+                f"Cover URL is empty for audio: {name}, skipping cover upload"
+            )
             cover_file_id = None
+
+        # 解析描述中的音乐制作信息
+        credits = DescriptionAudioParser(description)
 
         return {
             "name": name,
@@ -504,4 +543,10 @@ class NotionService:
             "cover": cover_file_id,
             "publish_date": publish_date,
             "play": play,
+            "singer": DescriptionAudioParser.format_to_list(credits.singer),
+            "lyricist": DescriptionAudioParser.format_to_list(credits.lyricist),
+            "composer": DescriptionAudioParser.format_to_list(credits.composer),
+            "arranger": DescriptionAudioParser.format_to_list(credits.arranger),
+            "mixer": DescriptionAudioParser.format_to_list(credits.mixer),
+            "lyrics": credits.lyrics,
         }

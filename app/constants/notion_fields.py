@@ -73,6 +73,12 @@ class AudioField(StrEnum):
 
     # ========== 富文本类型 (rich_text) ==========
     DESCRIPTION = "Description"
+    LYRICS = "Lyrics"
 
     # ========== 多选类型 (multi_select) ==========
     PLATFORM = "Platform"
+    SINGER = "演唱"
+    LYRICIST = "作词"
+    COMPOSER = "作曲"
+    ARRANGER = "编曲"
+    MIXER = "混音"
