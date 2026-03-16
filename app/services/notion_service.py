@@ -209,7 +209,9 @@ class NotionService:
 
         # 处理封面相关字段，square 为空时 fallback 到 cover
         if F.COVER in update_fields:
-            cover_url = audio_data.get("cover_square", "") or audio_data.get("cover", "")
+            cover_url = audio_data.get("cover_square", "") or audio_data.get(
+                "cover", ""
+            )
             if cover_url:
                 cover_url = cover_url.split("?")[0]
                 async with CoverUploader(
@@ -217,7 +219,9 @@ class NotionService:
                 ) as cover_uploader:
                     result["cover_id"] = await cover_uploader.image_upload()
             else:
-                logger.warning(f"Both cover_square and cover are empty for audio: {name}, skipping cover upload")
+                logger.warning(
+                    f"Both cover_square and cover are empty for audio: {name}, skipping cover upload"
+                )
 
         # 处理播放量
         if F.PLAY in update_fields:
@@ -237,11 +241,17 @@ class NotionService:
             if F.SINGER in update_fields:
                 result["singer"] = DescriptionAudioParser.format_to_list(credits.singer)
             if F.LYRICIST in update_fields:
-                result["lyricist"] = DescriptionAudioParser.format_to_list(credits.lyricist)
+                result["lyricist"] = DescriptionAudioParser.format_to_list(
+                    credits.lyricist
+                )
             if F.COMPOSER in update_fields:
-                result["composer"] = DescriptionAudioParser.format_to_list(credits.composer)
+                result["composer"] = DescriptionAudioParser.format_to_list(
+                    credits.composer
+                )
             if F.ARRANGER in update_fields:
-                result["arranger"] = DescriptionAudioParser.format_to_list(credits.arranger)
+                result["arranger"] = DescriptionAudioParser.format_to_list(
+                    credits.arranger
+                )
             if F.MIXER in update_fields:
                 result["mixer"] = DescriptionAudioParser.format_to_list(credits.mixer)
 
@@ -277,7 +287,9 @@ class NotionService:
             ) as cover_uploader:
                 cover_file_id = await cover_uploader.image_upload()
         else:
-            logger.warning(f"Cover URL is empty for album: {name}, skipping cover upload")
+            logger.warning(
+                f"Cover URL is empty for album: {name}, skipping cover upload"
+            )
             cover_file_id = None
 
         # 解析描述
@@ -515,7 +527,9 @@ class NotionService:
             ) as cover_uploader:
                 cover_file_id = await cover_uploader.image_upload()
         else:
-            logger.warning(f"Cover URL is empty for audio: {name}, skipping cover upload")
+            logger.warning(
+                f"Cover URL is empty for audio: {name}, skipping cover upload"
+            )
             cover_file_id = None
 
         # 解析描述中的音乐制作信息

@@ -53,10 +53,10 @@ class DescriptionAudioParser:
 
         # 按优先级检测歌词起始标记
         patterns = [
-            r'——《[^》]*》歌词——',  # ——《歌名》歌词——
-            r'【歌词】',              # 【歌词】
-            r'歌词\s*[：:]',          # 歌词： 或 歌词:
-            r'\n—{3,}\n',            # ——————— 分隔线
+            r"——《[^》]*》歌词——",  # ——《歌名》歌词——
+            r"【歌词】",  # 【歌词】
+            r"歌词\s*[：:]",  # 歌词： 或 歌词:
+            r"\n—{3,}\n",  # ——————— 分隔线
         ]
 
         earliest: re.Match | None = None
@@ -106,7 +106,7 @@ class DescriptionAudioParser:
     @staticmethod
     def _parse_names(names_str: str) -> List[str]:
         """解析姓名字符串：去除 @handle，按分隔符拆分多人"""
-        cleaned = re.sub(r"@\S+", "", names_str)
+        cleaned = re.sub(r"@[^\s、，,]+", "", names_str)
         parts = re.split(r"[、，,]", cleaned)
         return [p.strip() for p in parts if p.strip()]
 

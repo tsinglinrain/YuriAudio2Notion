@@ -162,7 +162,9 @@ class NotionClient:
         """
         return {
             "Name": {"title": [{"text": {"content": name}}]},
-            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]} if cover else {"files": []},
+            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
+            if cover
+            else {"files": []},
             "简介": {"rich_text": [{"text": {"content": description}}]},
             "简介续": {"rich_text": [{"text": {"content": description_sequel}}]},
             "Publish Date": {
@@ -173,7 +175,9 @@ class NotionClient:
             },
             "更新": {"multi_select": update_frequency},
             "Price": {"number": ori_price},
-            "原著": {"select": {"name": author_name}} if author_name else {"select": None},
+            "原著": {"select": {"name": author_name}}
+            if author_name
+            else {"select": None},
             "up主": {"select": {"name": up_name}} if up_name else {"select": None},
             "Tags": {"multi_select": tags},
             "来源": {"select": {"name": source}},
@@ -230,7 +234,9 @@ class NotionClient:
                 }
             },
             "Description": {"rich_text": [{"text": {"content": description}}]},
-            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]} if cover else {"files": []},
+            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
+            if cover
+            else {"files": []},
             "播放": {"number": play},
             "演唱": {"multi_select": singer or []},
             "作词": {"multi_select": lyricist or []},
@@ -452,9 +458,15 @@ class NotionClient:
             },
             # 音乐制作信息（multi_select）
             F.SINGER: lambda data: {F.SINGER: {"multi_select": data.get("singer", [])}},
-            F.LYRICIST: lambda data: {F.LYRICIST: {"multi_select": data.get("lyricist", [])}},
-            F.COMPOSER: lambda data: {F.COMPOSER: {"multi_select": data.get("composer", [])}},
-            F.ARRANGER: lambda data: {F.ARRANGER: {"multi_select": data.get("arranger", [])}},
+            F.LYRICIST: lambda data: {
+                F.LYRICIST: {"multi_select": data.get("lyricist", [])}
+            },
+            F.COMPOSER: lambda data: {
+                F.COMPOSER: {"multi_select": data.get("composer", [])}
+            },
+            F.ARRANGER: lambda data: {
+                F.ARRANGER: {"multi_select": data.get("arranger", [])}
+            },
             F.MIXER: lambda data: {F.MIXER: {"multi_select": data.get("mixer", [])}},
         }
 
