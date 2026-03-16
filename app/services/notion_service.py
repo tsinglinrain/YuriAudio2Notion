@@ -231,7 +231,7 @@ class NotionService:
             result["description"] = audio_data.get("description", "")
 
         # 音乐制作信息字段：从 description 解析，按需延迟创建解析器
-        credits_fields = {F.SINGER, F.LYRICIST, F.COMPOSER, F.ARRANGER, F.MIXER}
+        credits_fields = {F.SINGER, F.LYRICIST, F.COMPOSER, F.ARRANGER, F.MIXER, F.LYRICS}
         credits = (
             DescriptionAudioParser(audio_data.get("description", ""))
             if credits_fields & set(update_fields)
@@ -254,6 +254,8 @@ class NotionService:
                 )
             if F.MIXER in update_fields:
                 result["mixer"] = DescriptionAudioParser.format_to_list(credits.mixer)
+            if F.LYRICS in update_fields:
+                result["lyrics"] = credits.lyrics
 
         if F.PUBLISH_DATE in update_fields:
             publish_date = audio_data.get("publish_date", "")
@@ -546,4 +548,5 @@ class NotionService:
             "composer": DescriptionAudioParser.format_to_list(credits.composer),
             "arranger": DescriptionAudioParser.format_to_list(credits.arranger),
             "mixer": DescriptionAudioParser.format_to_list(credits.mixer),
+            "lyrics": credits.lyrics,
         }

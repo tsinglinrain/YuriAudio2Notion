@@ -55,7 +55,7 @@ class DescriptionAudioParser:
         patterns = [
             r"——《[^》]*》歌词——",  # ——《歌名》歌词——
             r"【歌词】",  # 【歌词】
-            r"歌词\s*[：:]",  # 歌词： 或 歌词:
+            r"^歌词\s*[：:]",  # 行首的 歌词： 或 歌词:（避免误匹配"歌词监修："等行中出现的情况）
             r"\n—{3,}\n",  # ——————— 分隔线
         ]
 
@@ -107,6 +107,8 @@ class DescriptionAudioParser:
     def _parse_names(names_str: str) -> List[str]:
         """解析姓名字符串：去除 @handle，按分隔符拆分多人"""
         cleaned = re.sub(r"@[^\s、，,]+", "", names_str)
+        # 按 、（顿号）、，（全角逗号）、,（半角逗号）拆分多人
+        # 半角逗号主要用于兼容非中文格式数据，中文姓名本身不含逗号
         parts = re.split(r"[、，,]", cleaned)
         return [p.strip() for p in parts if p.strip()]
 

@@ -203,6 +203,7 @@ class NotionClient:
         composer: Optional[List[dict]] = None,
         arranger: Optional[List[dict]] = None,
         mixer: Optional[List[dict]] = None,
+        lyrics: str = "",
         platform: str = "饭角",
         time_zone: str = "Asia/Shanghai",
     ) -> Dict[str, Any]:
@@ -219,6 +220,7 @@ class NotionClient:
             composer: 作曲
             arranger: 编曲
             mixer: 混音
+            lyrics: 歌词
             platform: 平台
             time_zone: 时区
 
@@ -243,6 +245,7 @@ class NotionClient:
             "作曲": {"multi_select": composer or []},
             "编曲": {"multi_select": arranger or []},
             "混音": {"multi_select": mixer or []},
+            "Lyrics": {"rich_text": [{"text": {"content": lyrics}}]},
             "Platform": {"multi_select": [{"name": platform}]},
         }
 
@@ -468,6 +471,12 @@ class NotionClient:
                 F.ARRANGER: {"multi_select": data.get("arranger", [])}
             },
             F.MIXER: lambda data: {F.MIXER: {"multi_select": data.get("mixer", [])}},
+            # 歌词（rich_text）
+            F.LYRICS: lambda data: {
+                F.LYRICS: {
+                    "rich_text": [{"text": {"content": data.get("lyrics", "")}}]
+                }
+            },
         }
 
         properties: Dict[str, Any] = {}
