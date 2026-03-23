@@ -12,6 +12,7 @@ from notion_client import AsyncClient
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.config import config
 from app.utils.logger import setup_logger
+from app.utils.notion_property import NotionProp as P
 
 logger = setup_logger(__name__)
 
@@ -132,38 +133,25 @@ class NotionClient:
         up_name = data.get("up_name", "")
 
         return {
-            F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]},
-            F.COVER: {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
-            if cover
-            else {"files": []},
-            F.DESCRIPTION: {
-                "rich_text": [{"text": {"content": data.get("description", "")}}]
-            },
-            F.DESCRIPTION_SEQUEL: {
-                "rich_text": [{"text": {"content": data.get("description_sequel", "")}}]
-            },
-            F.PUBLISH_DATE: {
-                "date": {
-                    "start": data.get("publish_date", ""),
-                    "time_zone": time_zone,
-                }
-            },
-            F.UPDATE_FREQ: {"multi_select": data.get("update_frequency", [])},
-            F.PRICE: {"number": data.get("ori_price", 0)},
-            F.AUTHOR: {"select": {"name": author_name}}
-            if author_name
-            else {"select": None},
-            F.UP_NAME: {"select": {"name": up_name}} if up_name else {"select": None},
-            F.TAGS: {"multi_select": data.get("tags", [])},
-            F.SOURCE: {"select": {"name": data.get("source", "")}},
-            F.MAIN_CV: {"multi_select": data.get("main_cv", [])},
-            F.MAIN_CV_ROLE: {"multi_select": data.get("main_cv_role", [])},
-            F.SUPPORTING_CV: {"multi_select": data.get("supporting_cv", [])},
-            F.SUPPORTING_CV_ROLE: {"multi_select": data.get("supporting_cv_role", [])},
-            F.COMMERCIAL: {"select": {"name": data.get("commercial_drama", "")}},
-            F.EPISODE_COUNT: {"number": data.get("episode_count", 0)},
-            F.ALBUM_LINK: {"url": data.get("album_link", "")},
-            F.PLATFORM: {"multi_select": [{"name": platform}]},
+            F.NAME: P.title(data.get("name", "")),
+            F.COVER: P.file_upload(cover),
+            F.DESCRIPTION: P.rich_text(data.get("description", "")),
+            F.DESCRIPTION_SEQUEL: P.rich_text(data.get("description_sequel", "")),
+            F.PUBLISH_DATE: P.date(data.get("publish_date", ""), time_zone),
+            F.UPDATE_FREQ: P.multi_select(data.get("update_frequency", [])),
+            F.PRICE: P.number(data.get("ori_price", 0)),
+            F.AUTHOR: P.select(author_name),
+            F.UP_NAME: P.select(up_name),
+            F.TAGS: P.multi_select(data.get("tags", [])),
+            F.SOURCE: P.select(data.get("source", "")),
+            F.MAIN_CV: P.multi_select(data.get("main_cv", [])),
+            F.MAIN_CV_ROLE: P.multi_select(data.get("main_cv_role", [])),
+            F.SUPPORTING_CV: P.multi_select(data.get("supporting_cv", [])),
+            F.SUPPORTING_CV_ROLE: P.multi_select(data.get("supporting_cv_role", [])),
+            F.COMMERCIAL: P.select(data.get("commercial_drama", "")),
+            F.EPISODE_COUNT: P.number(data.get("episode_count", 0)),
+            F.ALBUM_LINK: P.url(data.get("album_link", "")),
+            F.PLATFORM: P.multi_select([{"name": platform}]),
         }
 
     @staticmethod
@@ -187,28 +175,34 @@ class NotionClient:
         cover = data.get("cover")
 
         return {
-            F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]},
-            F.PUBLISH_DATE: {
-                "date": {
-                    "start": data.get("publish_date", ""),
-                    "time_zone": time_zone,
-                }
-            },
-            F.DESCRIPTION: {
-                "rich_text": [{"text": {"content": data.get("description", "")}}]
-            },
-            F.COVER: {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
-            if cover
-            else {"files": []},
-            F.PLAY: {"number": data.get("play", 0)},
-            F.SINGER: {"multi_select": data.get("singer") or []},
-            F.LYRICIST: {"multi_select": data.get("lyricist") or []},
-            F.COMPOSER: {"multi_select": data.get("composer") or []},
-            F.ARRANGER: {"multi_select": data.get("arranger") or []},
-            F.MIXER: {"multi_select": data.get("mixer") or []},
-            F.LYRICS: {"rich_text": [{"text": {"content": data.get("lyrics", "")}}]},
-            F.PLATFORM: {"multi_select": [{"name": platform}]},
+            F.NAME: P.title(data.get("name", "")),
+            F.PUBLISH_DATE: P.date(data.get("publish_date", ""), time_zone),
+            F.DESCRIPTION: P.rich_text(data.get("description", "")),
+            F.COVER: P.file_upload(cover),
+            F.PLAY: P.number(data.get("play", 0)),
+            F.SINGER: P.multi_select(data.get("singer") or []),
+            F.LYRICIST: P.multi_select(data.get("lyricist") or []),
+            F.COMPOSER: P.multi_select(data.get("composer") or []),
+            F.ARRANGER: P.multi_select(data.get("arranger") or []),
+            F.MIXER: P.multi_select(data.get("mixer") or []),
+            F.LYRICS: P.rich_text(data.get("lyrics", "")),
+            F.PLATFORM: P.multi_select([{"name": platform}]),
         }
+
+    @staticmethod
+    def _apply_field_mapping(
+        field_mapping: Dict[str, Any],
+        update_fields: list[str],
+        data: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """遍历 update_fields，用 field_mapping 构建 Notion 属性（跳过空结果）"""
+        properties: Dict[str, Any] = {}
+        for field in update_fields:
+            if field in field_mapping:
+                field_props = field_mapping[field](data)
+                if field_props:
+                    properties.update(field_props)
+        return properties
 
     @staticmethod
     def build_partial_properties(
@@ -232,130 +226,74 @@ class NotionClient:
         """
         F = AlbumField
         field_mapping: Dict[str, Any] = {
-            F.NAME: lambda data, tz: {
-                F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]}
-            },
-            F.COVER: lambda data, tz: {
-                F.COVER: {
-                    "files": [
-                        {
-                            "type": "file_upload",
-                            "file_upload": {"id": data.get("cover", "")},
-                        }
-                    ]
-                }
-            }
-            if data.get("cover")
+            F.NAME: lambda d: {F.NAME: P.title(d.get("name", ""))},
+            F.COVER: lambda d: {F.COVER: P.file_upload(d.get("cover"))}
+            if d.get("cover")
             else {},
-            F.COVER_HORIZONTAL: lambda data, tz: {
-                F.COVER_HORIZONTAL: {
-                    "files": [
-                        {
-                            "type": "file_upload",
-                            "file_upload": {"id": data.get("cover_horizontal", "")},
-                        }
-                    ]
-                }
+            F.COVER_HORIZONTAL: lambda d: {
+                F.COVER_HORIZONTAL: P.file_upload(d.get("cover_horizontal"))
             }
-            if data.get("cover_horizontal")
+            if d.get("cover_horizontal")
             else {},
-            F.COVER_SQUARE: lambda data, tz: {
-                F.COVER_SQUARE: {
-                    "files": [
-                        {
-                            "type": "file_upload",
-                            "file_upload": {"id": data.get("cover_square", "")},
-                        }
-                    ]
-                }
+            F.COVER_SQUARE: lambda d: {
+                F.COVER_SQUARE: P.file_upload(d.get("cover_square"))
             }
-            if data.get("cover_square")
+            if d.get("cover_square")
             else {},
-            F.PLAY: lambda data, tz: {F.PLAY: {"number": data.get("play", 0)}},
-            F.LIKED: lambda data, tz: {F.LIKED: {"number": data.get("liked", 0)}},
-            F.PRICE: lambda data, tz: {F.PRICE: {"number": data.get("ori_price", 0)}},
-            F.EPISODE_COUNT: lambda data, tz: {
-                F.EPISODE_COUNT: {"number": data.get("episode_count", 0)}
+            F.PLAY: lambda d: {F.PLAY: P.number(d.get("play", 0))},
+            F.LIKED: lambda d: {F.LIKED: P.number(d.get("liked", 0))},
+            F.PRICE: lambda d: {F.PRICE: P.number(d.get("ori_price", 0))},
+            F.EPISODE_COUNT: lambda d: {
+                F.EPISODE_COUNT: P.number(d.get("episode_count", 0))
             },
-            F.PUBLISH_DATE: lambda data, tz: {
-                F.PUBLISH_DATE: {
-                    "date": {
-                        "start": data.get("publish_date", ""),
-                        "time_zone": tz,
-                    }
-                }
+            F.PUBLISH_DATE: lambda d: {
+                F.PUBLISH_DATE: P.date(d.get("publish_date", ""), time_zone)
             }
-            if data.get("publish_date")
+            if d.get("publish_date")
             else {},
-            F.DESCRIPTION: lambda data, tz: {
-                F.DESCRIPTION: {
-                    "rich_text": [{"text": {"content": data.get("description", "")}}]
-                }
+            F.DESCRIPTION: lambda d: {
+                F.DESCRIPTION: P.rich_text(d.get("description", ""))
             },
-            F.DESCRIPTION_SEQUEL: lambda data, tz: {
-                F.DESCRIPTION_SEQUEL: {
-                    "rich_text": [
-                        {"text": {"content": data.get("description_sequel", "")}}
-                    ]
-                }
+            F.DESCRIPTION_SEQUEL: lambda d: {
+                F.DESCRIPTION_SEQUEL: P.rich_text(d.get("description_sequel", ""))
             },
-            F.AUTHOR: lambda data, tz: {
-                F.AUTHOR: {"select": {"name": data.get("author_name", "")}}
-            }
-            if data.get("author_name")
+            F.AUTHOR: lambda d: {F.AUTHOR: P.select(d.get("author_name", ""))}
+            if d.get("author_name")
             else {},
-            F.UP_NAME: lambda data, tz: {
-                F.UP_NAME: {"select": {"name": data.get("up_name", "")}}
-            }
-            if data.get("up_name")
+            F.UP_NAME: lambda d: {F.UP_NAME: P.select(d.get("up_name", ""))}
+            if d.get("up_name")
             else {},
-            F.SOURCE: lambda data, tz: {
-                F.SOURCE: {"select": {"name": data.get("source", "")}}
-            }
-            if data.get("source")
+            F.SOURCE: lambda d: {F.SOURCE: P.select(d.get("source", ""))}
+            if d.get("source")
             else {},
-            F.COMMERCIAL: lambda data, tz: {
-                F.COMMERCIAL: {"select": {"name": data.get("commercial_drama", "")}}
+            F.COMMERCIAL: lambda d: {
+                F.COMMERCIAL: P.select(d.get("commercial_drama", ""))
             }
-            if data.get("commercial_drama")
+            if d.get("commercial_drama")
             else {},
-            F.UPDATE_FREQ: lambda data, tz: {
-                F.UPDATE_FREQ: {"multi_select": data.get("update_frequency", [])}
+            F.UPDATE_FREQ: lambda d: {
+                F.UPDATE_FREQ: P.multi_select(d.get("update_frequency", []))
             },
-            F.TAGS: lambda data, tz: {F.TAGS: {"multi_select": data.get("tags", [])}},
-            F.MAIN_CV: lambda data, tz: {
-                F.MAIN_CV: {"multi_select": data.get("main_cv", [])}
+            F.TAGS: lambda d: {F.TAGS: P.multi_select(d.get("tags", []))},
+            F.MAIN_CV: lambda d: {F.MAIN_CV: P.multi_select(d.get("main_cv", []))},
+            F.MAIN_CV_ROLE: lambda d: {
+                F.MAIN_CV_ROLE: P.multi_select(d.get("main_cv_role", []))
             },
-            F.MAIN_CV_ROLE: lambda data, tz: {
-                F.MAIN_CV_ROLE: {"multi_select": data.get("main_cv_role", [])}
+            F.SUPPORTING_CV: lambda d: {
+                F.SUPPORTING_CV: P.multi_select(d.get("supporting_cv", []))
             },
-            F.SUPPORTING_CV: lambda data, tz: {
-                F.SUPPORTING_CV: {"multi_select": data.get("supporting_cv", [])}
+            F.SUPPORTING_CV_ROLE: lambda d: {
+                F.SUPPORTING_CV_ROLE: P.multi_select(d.get("supporting_cv_role", []))
             },
-            F.SUPPORTING_CV_ROLE: lambda data, tz: {
-                F.SUPPORTING_CV_ROLE: {
-                    "multi_select": data.get("supporting_cv_role", [])
-                }
+            F.PLATFORM: lambda d: {
+                F.PLATFORM: P.multi_select([{"name": d.get("platform", "饭角")}])
             },
-            F.PLATFORM: lambda data, tz: {
-                F.PLATFORM: {"multi_select": [{"name": data.get("platform", "饭角")}]}
-            },
-            F.ALBUM_LINK: lambda data, tz: {
-                F.ALBUM_LINK: {"url": data.get("album_link", "")}
-            }
-            if data.get("album_link")
+            F.ALBUM_LINK: lambda d: {F.ALBUM_LINK: P.url(d.get("album_link", ""))}
+            if d.get("album_link")
             else {},
         }
 
-        properties: Dict[str, Any] = {}
-
-        for field in update_fields:
-            if field in field_mapping:
-                field_props = field_mapping[field](kwargs, time_zone)
-                if field_props:  # 只添加非空属性
-                    properties.update(field_props)
-
-        return properties
+        return NotionClient._apply_field_mapping(field_mapping, update_fields, kwargs)
 
     @staticmethod
     def build_partial_audio_properties(
@@ -368,6 +306,7 @@ class NotionClient:
 
         Args:
             update_fields: 需要更新的字段列表
+            time_zone: 时区，默认 Asia/Shanghai
             **kwargs: 字段对应的值
 
         Returns:
@@ -375,56 +314,23 @@ class NotionClient:
         """
         F = AudioField
         field_mapping: Dict[str, Any] = {
-            F.NAME: lambda data: {
-                F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]}
-            },
-            F.COVER: lambda data: {
-                F.COVER: {
-                    "files": [
-                        {
-                            "type": "file_upload",
-                            "file_upload": {"id": data.get("cover_id", "")},
-                        }
-                    ]
-                }
-            }
-            if data.get("cover_id")
+            F.NAME: lambda d: {F.NAME: P.title(d.get("name", ""))},
+            F.COVER: lambda d: {F.COVER: P.file_upload(d.get("cover_id"))}
+            if d.get("cover_id")
             else {},
-            F.PLAY: lambda data: {F.PLAY: {"number": data.get("play", 0)}},
-            F.DESCRIPTION: lambda data: {
-                F.DESCRIPTION: {
-                    "rich_text": [{"text": {"content": data.get("description", "")}}]
-                }
+            F.PLAY: lambda d: {F.PLAY: P.number(d.get("play", 0))},
+            F.DESCRIPTION: lambda d: {
+                F.DESCRIPTION: P.rich_text(d.get("description", ""))
             },
-            F.PUBLISH_DATE: lambda data: {
-                F.PUBLISH_DATE: {
-                    "date": {
-                        "start": data.get("publish_date", ""),
-                        "time_zone": time_zone,
-                    }
-                }
+            F.PUBLISH_DATE: lambda d: {
+                F.PUBLISH_DATE: P.date(d.get("publish_date", ""), time_zone)
             },
-            F.SINGER: lambda data: {F.SINGER: {"multi_select": data.get("singer", [])}},
-            F.LYRICIST: lambda data: {
-                F.LYRICIST: {"multi_select": data.get("lyricist", [])}
-            },
-            F.COMPOSER: lambda data: {
-                F.COMPOSER: {"multi_select": data.get("composer", [])}
-            },
-            F.ARRANGER: lambda data: {
-                F.ARRANGER: {"multi_select": data.get("arranger", [])}
-            },
-            F.MIXER: lambda data: {F.MIXER: {"multi_select": data.get("mixer", [])}},
-            F.LYRICS: lambda data: {
-                F.LYRICS: {"rich_text": [{"text": {"content": data.get("lyrics", "")}}]}
-            },
+            F.SINGER: lambda d: {F.SINGER: P.multi_select(d.get("singer", []))},
+            F.LYRICIST: lambda d: {F.LYRICIST: P.multi_select(d.get("lyricist", []))},
+            F.COMPOSER: lambda d: {F.COMPOSER: P.multi_select(d.get("composer", []))},
+            F.ARRANGER: lambda d: {F.ARRANGER: P.multi_select(d.get("arranger", []))},
+            F.MIXER: lambda d: {F.MIXER: P.multi_select(d.get("mixer", []))},
+            F.LYRICS: lambda d: {F.LYRICS: P.rich_text(d.get("lyrics", ""))},
         }
 
-        properties: Dict[str, Any] = {}
-
-        for field in update_fields:
-            if field in field_mapping:
-                field_props = field_mapping[field](kwargs)
-                properties.update(field_props)
-
-        return properties
+        return NotionClient._apply_field_mapping(field_mapping, update_fields, kwargs)
