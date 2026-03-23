@@ -6,7 +6,7 @@ Notion API客户端
 负责与Notion API进行交互（异步版本）
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from notion_client import AsyncClient
 
 from app.constants.notion_fields import AlbumField, AudioField
@@ -111,151 +111,108 @@ class NotionClient:
 
     @staticmethod
     def build_properties(
-        name: str,
-        cover: str,
-        description: str,
-        description_sequel: str,
-        publish_date: str,
-        update_frequency: List[Dict[str, str]],
-        ori_price: int,
-        author_name: str,
-        up_name: str,
-        tags: List[Dict[str, str]],
-        source: str,
-        main_cv: List[Dict[str, str]],
-        main_cv_role: List[Dict[str, str]],
-        supporting_cv: List[Dict[str, str]],
-        supporting_cv_role: List[Dict[str, str]],
-        commercial_drama: str,
-        episode_count: int,
-        album_link: str,
         platform: str = "饭角",
         time_zone: str = "Asia/Shanghai",
+        **data: Any,
     ) -> Dict[str, Any]:
         """
         构建Notion页面属性
 
         Args:
-            name: 专辑名称
-            cover: 封面海报file_upload_id
-            description: 简介
-            description_sequel: 简介续
-            publish_date: 发布日期
-            update_frequency: 更新频率
-            ori_price: 原价
-            author_name: 原著作者
-            up_name: up主
-            tags: 标签列表
-            source: 来源（改编/原创）
-            main_cv: 主役CV
-            main_cv_role: 主役角色
-            supporting_cv: 协役CV
-            supporting_cv_role: 协役角色
-            commercial_drama: 商剧标识
-            episode_count: 集数
-            album_link: 专辑链接
-            platform: 平台
-            time_zone: 时区
+            platform: 平台，默认 饭角
+            time_zone: 时区，默认 Asia/Shanghai
+            **data: 专辑数据字段（name, cover, description, publish_date 等）
 
         Returns:
             Notion页面属性字典
         """
         F = AlbumField
+        cover = data.get("cover")
+        author_name = data.get("author_name", "")
+        up_name = data.get("up_name", "")
+
         return {
-            F.NAME: {"title": [{"text": {"content": name}}]},
+            F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]},
             F.COVER: {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
             if cover
             else {"files": []},
-            F.DESCRIPTION: {"rich_text": [{"text": {"content": description}}]},
+            F.DESCRIPTION: {
+                "rich_text": [{"text": {"content": data.get("description", "")}}]
+            },
             F.DESCRIPTION_SEQUEL: {
-                "rich_text": [{"text": {"content": description_sequel}}]
+                "rich_text": [{"text": {"content": data.get("description_sequel", "")}}]
             },
             F.PUBLISH_DATE: {
                 "date": {
-                    "start": publish_date,
+                    "start": data.get("publish_date", ""),
                     "time_zone": time_zone,
                 }
             },
-            F.UPDATE_FREQ: {"multi_select": update_frequency},
-            F.PRICE: {"number": ori_price},
+            F.UPDATE_FREQ: {"multi_select": data.get("update_frequency", [])},
+            F.PRICE: {"number": data.get("ori_price", 0)},
             F.AUTHOR: {"select": {"name": author_name}}
             if author_name
             else {"select": None},
             F.UP_NAME: {"select": {"name": up_name}} if up_name else {"select": None},
-            F.TAGS: {"multi_select": tags},
-            F.SOURCE: {"select": {"name": source}},
-            F.MAIN_CV: {"multi_select": main_cv},
-            F.MAIN_CV_ROLE: {"multi_select": main_cv_role},
-            F.SUPPORTING_CV: {"multi_select": supporting_cv},
-            F.SUPPORTING_CV_ROLE: {"multi_select": supporting_cv_role},
-            F.COMMERCIAL: {"select": {"name": commercial_drama}},
-            F.EPISODE_COUNT: {"number": episode_count},
-            F.ALBUM_LINK: {"url": album_link},
+            F.TAGS: {"multi_select": data.get("tags", [])},
+            F.SOURCE: {"select": {"name": data.get("source", "")}},
+            F.MAIN_CV: {"multi_select": data.get("main_cv", [])},
+            F.MAIN_CV_ROLE: {"multi_select": data.get("main_cv_role", [])},
+            F.SUPPORTING_CV: {"multi_select": data.get("supporting_cv", [])},
+            F.SUPPORTING_CV_ROLE: {"multi_select": data.get("supporting_cv_role", [])},
+            F.COMMERCIAL: {"select": {"name": data.get("commercial_drama", "")}},
+            F.EPISODE_COUNT: {"number": data.get("episode_count", 0)},
+            F.ALBUM_LINK: {"url": data.get("album_link", "")},
             F.PLATFORM: {"multi_select": [{"name": platform}]},
         }
 
     @staticmethod
     def build_audio_properties(
-        name: str,
-        publish_date: str,
-        description: str,
-        cover: str,
-        play: int,
-        singer: Optional[List[dict]] = None,
-        lyricist: Optional[List[dict]] = None,
-        composer: Optional[List[dict]] = None,
-        arranger: Optional[List[dict]] = None,
-        mixer: Optional[List[dict]] = None,
-        lyrics: str = "",
         platform: str = "饭角",
         time_zone: str = "Asia/Shanghai",
+        **data: Any,
     ) -> Dict[str, Any]:
         """
         构建Notion音频页面属性
 
         Args:
-            name: 音频名称
-            publish_date: 发布日期
-            description: 描述
-            cover: 封面
-            singer: 演唱
-            lyricist: 作词
-            composer: 作曲
-            arranger: 编曲
-            mixer: 混音
-            lyrics: 歌词
-            platform: 平台
-            time_zone: 时区
+            platform: 平台，默认 饭角
+            time_zone: 时区，默认 Asia/Shanghai
+            **data: 音频数据字段（name, cover, description, publish_date 等）
 
         Returns:
             Notion音频页面属性字典
         """
         F = AudioField
+        cover = data.get("cover")
+
         return {
-            F.NAME: {"title": [{"text": {"content": name}}]},
+            F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]},
             F.PUBLISH_DATE: {
                 "date": {
-                    "start": publish_date,
+                    "start": data.get("publish_date", ""),
                     "time_zone": time_zone,
                 }
             },
-            F.DESCRIPTION: {"rich_text": [{"text": {"content": description}}]},
+            F.DESCRIPTION: {
+                "rich_text": [{"text": {"content": data.get("description", "")}}]
+            },
             F.COVER: {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
             if cover
             else {"files": []},
-            F.PLAY: {"number": play},
-            F.SINGER: {"multi_select": singer or []},
-            F.LYRICIST: {"multi_select": lyricist or []},
-            F.COMPOSER: {"multi_select": composer or []},
-            F.ARRANGER: {"multi_select": arranger or []},
-            F.MIXER: {"multi_select": mixer or []},
-            F.LYRICS: {"rich_text": [{"text": {"content": lyrics}}]},
+            F.PLAY: {"number": data.get("play", 0)},
+            F.SINGER: {"multi_select": data.get("singer") or []},
+            F.LYRICIST: {"multi_select": data.get("lyricist") or []},
+            F.COMPOSER: {"multi_select": data.get("composer") or []},
+            F.ARRANGER: {"multi_select": data.get("arranger") or []},
+            F.MIXER: {"multi_select": data.get("mixer") or []},
+            F.LYRICS: {"rich_text": [{"text": {"content": data.get("lyrics", "")}}]},
             F.PLATFORM: {"multi_select": [{"name": platform}]},
         }
 
     @staticmethod
     def build_partial_properties(
-        update_fields: List[str],
+        update_fields: list[AlbumField],
         time_zone: str = "Asia/Shanghai",
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -273,15 +230,11 @@ class NotionClient:
         Returns:
             Notion页面属性字典（仅包含需要更新的字段）
         """
-        # 定义字段名到Notion属性的映射
-        # 每个 lambda 接收 data 和 tz 参数
-        F = AlbumField  # 简化引用
+        F = AlbumField
         field_mapping: Dict[str, Any] = {
-            # 标题类型 (title)
             F.NAME: lambda data, tz: {
                 F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]}
             },
-            # 文件类型 (files)
             F.COVER: lambda data, tz: {
                 F.COVER: {
                     "files": [
@@ -318,14 +271,12 @@ class NotionClient:
             }
             if data.get("cover_square")
             else {},
-            # 数字类型 (number)
             F.PLAY: lambda data, tz: {F.PLAY: {"number": data.get("play", 0)}},
             F.LIKED: lambda data, tz: {F.LIKED: {"number": data.get("liked", 0)}},
             F.PRICE: lambda data, tz: {F.PRICE: {"number": data.get("ori_price", 0)}},
             F.EPISODE_COUNT: lambda data, tz: {
                 F.EPISODE_COUNT: {"number": data.get("episode_count", 0)}
             },
-            # 日期类型 (date)
             F.PUBLISH_DATE: lambda data, tz: {
                 F.PUBLISH_DATE: {
                     "date": {
@@ -336,7 +287,6 @@ class NotionClient:
             }
             if data.get("publish_date")
             else {},
-            # 富文本类型 (rich_text)
             F.DESCRIPTION: lambda data, tz: {
                 F.DESCRIPTION: {
                     "rich_text": [{"text": {"content": data.get("description", "")}}]
@@ -349,7 +299,6 @@ class NotionClient:
                     ]
                 }
             },
-            # 单选类型 (select)
             F.AUTHOR: lambda data, tz: {
                 F.AUTHOR: {"select": {"name": data.get("author_name", "")}}
             }
@@ -370,7 +319,6 @@ class NotionClient:
             }
             if data.get("commercial_drama")
             else {},
-            # 多选类型 (multi_select)
             F.UPDATE_FREQ: lambda data, tz: {
                 F.UPDATE_FREQ: {"multi_select": data.get("update_frequency", [])}
             },
@@ -392,7 +340,6 @@ class NotionClient:
             F.PLATFORM: lambda data, tz: {
                 F.PLATFORM: {"multi_select": [{"name": data.get("platform", "饭角")}]}
             },
-            # URL类型 (url)
             F.ALBUM_LINK: lambda data, tz: {
                 F.ALBUM_LINK: {"url": data.get("album_link", "")}
             }
@@ -412,7 +359,7 @@ class NotionClient:
 
     @staticmethod
     def build_partial_audio_properties(
-        update_fields: List[str],
+        update_fields: list[AudioField],
         time_zone: str = "Asia/Shanghai",
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -426,14 +373,11 @@ class NotionClient:
         Returns:
             Notion音频页面属性字典（仅包含需要更新的字段）
         """
-        # 定义字段名到Notion属性的映射
-        F = AudioField  # 简化引用
+        F = AudioField
         field_mapping: Dict[str, Any] = {
-            # 标题类型 (title)
             F.NAME: lambda data: {
                 F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]}
             },
-            # 封面相关
             F.COVER: lambda data: {
                 F.COVER: {
                     "files": [
@@ -446,15 +390,12 @@ class NotionClient:
             }
             if data.get("cover_id")
             else {},
-            # 播放量
             F.PLAY: lambda data: {F.PLAY: {"number": data.get("play", 0)}},
-            # 描述
             F.DESCRIPTION: lambda data: {
                 F.DESCRIPTION: {
                     "rich_text": [{"text": {"content": data.get("description", "")}}]
                 }
             },
-            # 发布日期
             F.PUBLISH_DATE: lambda data: {
                 F.PUBLISH_DATE: {
                     "date": {
@@ -463,7 +404,6 @@ class NotionClient:
                     }
                 }
             },
-            # 音乐制作信息（multi_select）
             F.SINGER: lambda data: {F.SINGER: {"multi_select": data.get("singer", [])}},
             F.LYRICIST: lambda data: {
                 F.LYRICIST: {"multi_select": data.get("lyricist", [])}
@@ -475,7 +415,6 @@ class NotionClient:
                 F.ARRANGER: {"multi_select": data.get("arranger", [])}
             },
             F.MIXER: lambda data: {F.MIXER: {"multi_select": data.get("mixer", [])}},
-            # 歌词（rich_text）
             F.LYRICS: lambda data: {
                 F.LYRICS: {"rich_text": [{"text": {"content": data.get("lyrics", "")}}]}
             },

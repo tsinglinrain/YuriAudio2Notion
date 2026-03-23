@@ -9,6 +9,7 @@
 import asyncio
 from typing import List, Dict, Optional
 
+from app.constants.notion_fields import AlbumField, AudioField
 from app.services.fanjiao_service import FanjiaoService
 from app.services.fanjiao_audio_service import FanjiaoAudioService
 from app.services.notion_service import NotionService
@@ -77,7 +78,7 @@ class AlbumProcessor:
         return success
 
     async def update_process_id(
-        self, album_id: str, page_id: str, update_fields: List[str]
+        self, album_id: str, page_id: str, update_fields: list[AlbumField]
     ) -> bool:
         """
         更新已有页面的专辑数据（异步）
@@ -194,7 +195,7 @@ class AudioProcessor:
         album_id: str,
         audio_id: str,
         page_id: str,
-        update_fields: List[str],
+        update_fields: list[AudioField],
     ) -> bool:
         """
         更新已有页面的音频数据（异步）

@@ -55,6 +55,10 @@ class AlbumField(StrEnum):
     # URL类型 (url)
     ALBUM_LINK = "Album Link"
 
+    # Notion 页面输入字段（webhook 读取用）
+    FANJIAO_ALBUM_ID = "FanjiaoAlbumID"
+    UPDATE_SELECTION = "Update_selection"
+
 
 class AudioField(StrEnum):
     """Audio 数据库字段名常量"""
@@ -82,3 +86,7 @@ class AudioField(StrEnum):
     COMPOSER = "作曲"
     ARRANGER = "编曲"
     MIXER = "混音"
+
+    # Notion 页面输入字段（webhook 读取用）
+    AUDIO_URL = "Audio_URL"
+    UPDATE_AUDIO_SELECTION = "UpdateAudioSelection"
