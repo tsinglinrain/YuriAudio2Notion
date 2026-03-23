@@ -18,7 +18,7 @@ uv sync
 python app/main.py
 
 # Run the webhook server (production)
-uvicorn app.main:app --host 0.0.0.0 --port 5050 --workers 3
+uvicorn app.main:app --host 0.0.0.0 --port 5050
 
 # Run CLI batch processing (reads URLs from waiting_up_private.txt)
 python cli.py
@@ -72,7 +72,7 @@ All endpoints require the `YURI-API-KEY` header or `api_key` query param when `A
 Copy `.env.template` to `.env`. All required env vars (except `API_KEY`) will raise `RuntimeError` at access time if missing — they are not validated at startup.
 
 - `FANJIAO_SALT`, `FANJIAO_BASE_URL`, `FANJIAO_CV_BASE_URL`, `FANJIAO_AUDIO_BASE_URL` — Fanjiao API credentials
-- `NOTION_TOKEN`, `NOTION_DATA_SOURCE_ID` — Notion integration token and default database ID
+- `NOTION_TOKEN`, `NOTION_DATA_SOURCE_ID` — Notion integration token and default data source ID
 - `API_KEY` — optional; if unset, all requests pass through with a warning log
 - `ENV` — `development` enables uvicorn `reload=True`; `production` disables it
 - `PORT` — defaults to `5050`

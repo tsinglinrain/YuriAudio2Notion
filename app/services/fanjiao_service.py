@@ -10,8 +10,7 @@ import re
 import asyncio
 from typing import Dict, Any, List, Optional
 
-from app.clients.fanjiao import FanjiaoAlbumClient, FanjiaoCVClient, BaseFanjiaoClient
-from app.core.description_parser import DescriptionParser
+from app.clients.fanjiao import FanjiaoAlbumClient, FanjiaoCVClient
 from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)

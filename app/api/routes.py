@@ -178,7 +178,7 @@ async def webhook_song(
     适用于在某个data source中专门设置一个空白page，在里面填写url，
     随后会在指定data source生成该链接对应的page
     """
-    logger.info(f"Received Notion webhook-song request")
+    logger.info("Received Notion webhook-song request")
 
     try:
         # 从请求中提取url

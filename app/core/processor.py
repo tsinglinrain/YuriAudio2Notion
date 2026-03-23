@@ -177,7 +177,7 @@ class AudioProcessor:
         if not audio_data:
             logger.error(f"Failed to fetch data for Audio ID: {audio_id}")
             return False
-        logger.info(f"Fetched data for Audio ID successfully")
+        logger.info(f"Fetched data for Audio ID: {audio_id} successfully")
 
         # 上传到Notion
         success = await self.notion_service.upload_audio_data(audio_data, page_id)

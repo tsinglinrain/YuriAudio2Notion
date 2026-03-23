@@ -473,9 +473,7 @@ class NotionClient:
             F.MIXER: lambda data: {F.MIXER: {"multi_select": data.get("mixer", [])}},
             # 歌词（rich_text）
             F.LYRICS: lambda data: {
-                F.LYRICS: {
-                    "rich_text": [{"text": {"content": data.get("lyrics", "")}}]
-                }
+                F.LYRICS: {"rich_text": [{"text": {"content": data.get("lyrics", "")}}]}
             },
         }
 
