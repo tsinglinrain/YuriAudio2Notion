@@ -6,7 +6,7 @@
 YuriAudio2Notion/
 ├── app/                           # 应用主目录
 │   ├── __init__.py
-│   ├── main.py                    # Flask应用入口（webhook服务器）
+│   ├── main.py                    # FastAPI应用入口（webhook服务器）
 │   ├── cli.py                     # 命令行入口（本地批处理）
 │   │
 │   ├── core/                      # 核心业务流程
@@ -86,7 +86,7 @@ YuriAudio2Notion/
   - `/webhook-url`: 直接传入URL
 
 ### 6. 入口层
-- **main.py**: Flask应用入口，用于启动webhook服务器
+- **main.py**: FastAPI应用入口，用于启动webhook服务器
 - **cli.py**: 命令行入口，用于本地批处理
 
 ## 设计原则
@@ -115,7 +115,7 @@ YuriAudio2Notion/
 python app/main.py
 
 # 生产环境（使用gunicorn）
-gunicorn --bind 0.0.0.0:5050 --workers 3 "app.main:create_app()"
+uvicorn app.main:app --host 0.0.0.0 --port 5050
 ```
 
 ### 命令行批处理模式
