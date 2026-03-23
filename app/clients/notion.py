@@ -160,35 +160,38 @@ class NotionClient:
         Returns:
             Notion页面属性字典
         """
+        F = AlbumField
         return {
-            "Name": {"title": [{"text": {"content": name}}]},
-            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
+            F.NAME: {"title": [{"text": {"content": name}}]},
+            F.COVER: {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
             if cover
             else {"files": []},
-            "简介": {"rich_text": [{"text": {"content": description}}]},
-            "简介续": {"rich_text": [{"text": {"content": description_sequel}}]},
-            "Publish Date": {
+            F.DESCRIPTION: {"rich_text": [{"text": {"content": description}}]},
+            F.DESCRIPTION_SEQUEL: {
+                "rich_text": [{"text": {"content": description_sequel}}]
+            },
+            F.PUBLISH_DATE: {
                 "date": {
                     "start": publish_date,
                     "time_zone": time_zone,
                 }
             },
-            "更新": {"multi_select": update_frequency},
-            "Price": {"number": ori_price},
-            "原著": {"select": {"name": author_name}}
+            F.UPDATE_FREQ: {"multi_select": update_frequency},
+            F.PRICE: {"number": ori_price},
+            F.AUTHOR: {"select": {"name": author_name}}
             if author_name
             else {"select": None},
-            "up主": {"select": {"name": up_name}} if up_name else {"select": None},
-            "Tags": {"multi_select": tags},
-            "来源": {"select": {"name": source}},
-            "cv主役": {"multi_select": main_cv},
-            "饰演角色": {"multi_select": main_cv_role},
-            "cv协役": {"multi_select": supporting_cv},
-            "协役饰演角色": {"multi_select": supporting_cv_role},
-            "商剧": {"select": {"name": commercial_drama}},
-            "Episode Count": {"number": episode_count},
-            "Album Link": {"url": album_link},
-            "Platform": {"multi_select": [{"name": platform}]},
+            F.UP_NAME: {"select": {"name": up_name}} if up_name else {"select": None},
+            F.TAGS: {"multi_select": tags},
+            F.SOURCE: {"select": {"name": source}},
+            F.MAIN_CV: {"multi_select": main_cv},
+            F.MAIN_CV_ROLE: {"multi_select": main_cv_role},
+            F.SUPPORTING_CV: {"multi_select": supporting_cv},
+            F.SUPPORTING_CV_ROLE: {"multi_select": supporting_cv_role},
+            F.COMMERCIAL: {"select": {"name": commercial_drama}},
+            F.EPISODE_COUNT: {"number": episode_count},
+            F.ALBUM_LINK: {"url": album_link},
+            F.PLATFORM: {"multi_select": [{"name": platform}]},
         }
 
     @staticmethod
@@ -227,26 +230,27 @@ class NotionClient:
         Returns:
             Notion音频页面属性字典
         """
+        F = AudioField
         return {
-            "Name": {"title": [{"text": {"content": name}}]},
-            "Publish Date": {
+            F.NAME: {"title": [{"text": {"content": name}}]},
+            F.PUBLISH_DATE: {
                 "date": {
                     "start": publish_date,
                     "time_zone": time_zone,
                 }
             },
-            "Description": {"rich_text": [{"text": {"content": description}}]},
-            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
+            F.DESCRIPTION: {"rich_text": [{"text": {"content": description}}]},
+            F.COVER: {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]}
             if cover
             else {"files": []},
-            "播放": {"number": play},
-            "演唱": {"multi_select": singer or []},
-            "作词": {"multi_select": lyricist or []},
-            "作曲": {"multi_select": composer or []},
-            "编曲": {"multi_select": arranger or []},
-            "混音": {"multi_select": mixer or []},
-            "Lyrics": {"rich_text": [{"text": {"content": lyrics}}]},
-            "Platform": {"multi_select": [{"name": platform}]},
+            F.PLAY: {"number": play},
+            F.SINGER: {"multi_select": singer or []},
+            F.LYRICIST: {"multi_select": lyricist or []},
+            F.COMPOSER: {"multi_select": composer or []},
+            F.ARRANGER: {"multi_select": arranger or []},
+            F.MIXER: {"multi_select": mixer or []},
+            F.LYRICS: {"rich_text": [{"text": {"content": lyrics}}]},
+            F.PLATFORM: {"multi_select": [{"name": platform}]},
         }
 
     @staticmethod
