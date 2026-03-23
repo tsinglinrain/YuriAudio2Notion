@@ -20,6 +20,17 @@ logger = setup_logger(__name__)
 class NotionClient:
     """Notion API异步客户端"""
 
+    _BUILDERS = {
+        "title": P.title,
+        "rich_text": P.rich_text,
+        "number": P.number,
+        "select": P.select,
+        "multi_select": P.multi_select,
+        "file_upload": P.file_upload,
+        "url": P.url,
+        "date": P.date,
+    }
+
     def __init__(
         self, data_source_id: Optional[str] = None, token: Optional[str] = None
     ):
@@ -190,18 +201,48 @@ class NotionClient:
         }
 
     @staticmethod
-    def _apply_field_mapping(
-        field_mapping: Dict[str, Any],
+    def _build_partial(
+        field_defs: dict,
         update_fields: list[str],
         data: Dict[str, Any],
+        time_zone: str = "Asia/Shanghai",
     ) -> Dict[str, Any]:
-        """遍历 update_fields，用 field_mapping 构建 Notion 属性（跳过空结果）"""
+        """
+        根据声明式字段定义和需要更新的字段，直接构建 Notion 属性。
+
+        field_defs 值的格式:
+        - callable: 接收 data 返回属性字典（用于特殊字段）
+        - (prop_type, data_key, default): 始终包含的字段
+        - (prop_type, data_key, default, True): 值为空时跳过的字段
+
+        prop_type: "title" | "rich_text" | "number" | "select" |
+                   "multi_select" | "file_upload" | "url" | "date"
+        """
         properties: Dict[str, Any] = {}
         for field in update_fields:
-            if field in field_mapping:
-                field_props = field_mapping[field](data)
-                if field_props:
-                    properties.update(field_props)
+            if field not in field_defs:
+                continue
+
+            spec = field_defs[field]
+            if callable(spec):
+                props = spec(data)
+                if props:
+                    properties.update(props)
+                continue
+
+            prop_type, data_key = spec[0], spec[1]
+            default = spec[2] if len(spec) > 2 else None
+            skip_empty = len(spec) > 3 and spec[3]
+
+            if skip_empty and not data.get(data_key):
+                continue
+
+            builder = NotionClient._BUILDERS[prop_type]
+            if prop_type == "date":
+                properties[field] = builder(data.get(data_key, ""), time_zone)
+            else:
+                properties[field] = builder(data.get(data_key, default))
+
         return properties
 
     @staticmethod
@@ -225,75 +266,38 @@ class NotionClient:
             Notion页面属性字典（仅包含需要更新的字段）
         """
         F = AlbumField
-        field_mapping: Dict[str, Any] = {
-            F.NAME: lambda d: {F.NAME: P.title(d.get("name", ""))},
-            F.COVER: lambda d: {F.COVER: P.file_upload(d.get("cover"))}
-            if d.get("cover")
-            else {},
-            F.COVER_HORIZONTAL: lambda d: {
-                F.COVER_HORIZONTAL: P.file_upload(d.get("cover_horizontal"))
-            }
-            if d.get("cover_horizontal")
-            else {},
-            F.COVER_SQUARE: lambda d: {
-                F.COVER_SQUARE: P.file_upload(d.get("cover_square"))
-            }
-            if d.get("cover_square")
-            else {},
-            F.PLAY: lambda d: {F.PLAY: P.number(d.get("play", 0))},
-            F.LIKED: lambda d: {F.LIKED: P.number(d.get("liked", 0))},
-            F.PRICE: lambda d: {F.PRICE: P.number(d.get("ori_price", 0))},
-            F.EPISODE_COUNT: lambda d: {
-                F.EPISODE_COUNT: P.number(d.get("episode_count", 0))
+        return NotionClient._build_partial(
+            {
+                F.NAME: ("title", "name", ""),
+                F.COVER: ("file_upload", "cover", None, True),
+                F.COVER_HORIZONTAL: ("file_upload", "cover_horizontal", None, True),
+                F.COVER_SQUARE: ("file_upload", "cover_square", None, True),
+                F.PLAY: ("number", "play", 0),
+                F.LIKED: ("number", "liked", 0),
+                F.PRICE: ("number", "ori_price", 0),
+                F.EPISODE_COUNT: ("number", "episode_count", 0),
+                F.PUBLISH_DATE: ("date", "publish_date", "", True),
+                F.DESCRIPTION: ("rich_text", "description", ""),
+                F.DESCRIPTION_SEQUEL: ("rich_text", "description_sequel", ""),
+                F.AUTHOR: ("select", "author_name", "", True),
+                F.UP_NAME: ("select", "up_name", "", True),
+                F.SOURCE: ("select", "source", "", True),
+                F.COMMERCIAL: ("select", "commercial_drama", "", True),
+                F.UPDATE_FREQ: ("multi_select", "update_frequency", []),
+                F.TAGS: ("multi_select", "tags", []),
+                F.MAIN_CV: ("multi_select", "main_cv", []),
+                F.MAIN_CV_ROLE: ("multi_select", "main_cv_role", []),
+                F.SUPPORTING_CV: ("multi_select", "supporting_cv", []),
+                F.SUPPORTING_CV_ROLE: ("multi_select", "supporting_cv_role", []),
+                F.PLATFORM: lambda d: {
+                    F.PLATFORM: P.multi_select([{"name": d.get("platform", "饭角")}])
+                },
+                F.ALBUM_LINK: ("url", "album_link", "", True),
             },
-            F.PUBLISH_DATE: lambda d: {
-                F.PUBLISH_DATE: P.date(d.get("publish_date", ""), time_zone)
-            }
-            if d.get("publish_date")
-            else {},
-            F.DESCRIPTION: lambda d: {
-                F.DESCRIPTION: P.rich_text(d.get("description", ""))
-            },
-            F.DESCRIPTION_SEQUEL: lambda d: {
-                F.DESCRIPTION_SEQUEL: P.rich_text(d.get("description_sequel", ""))
-            },
-            F.AUTHOR: lambda d: {F.AUTHOR: P.select(d.get("author_name", ""))}
-            if d.get("author_name")
-            else {},
-            F.UP_NAME: lambda d: {F.UP_NAME: P.select(d.get("up_name", ""))}
-            if d.get("up_name")
-            else {},
-            F.SOURCE: lambda d: {F.SOURCE: P.select(d.get("source", ""))}
-            if d.get("source")
-            else {},
-            F.COMMERCIAL: lambda d: {
-                F.COMMERCIAL: P.select(d.get("commercial_drama", ""))
-            }
-            if d.get("commercial_drama")
-            else {},
-            F.UPDATE_FREQ: lambda d: {
-                F.UPDATE_FREQ: P.multi_select(d.get("update_frequency", []))
-            },
-            F.TAGS: lambda d: {F.TAGS: P.multi_select(d.get("tags", []))},
-            F.MAIN_CV: lambda d: {F.MAIN_CV: P.multi_select(d.get("main_cv", []))},
-            F.MAIN_CV_ROLE: lambda d: {
-                F.MAIN_CV_ROLE: P.multi_select(d.get("main_cv_role", []))
-            },
-            F.SUPPORTING_CV: lambda d: {
-                F.SUPPORTING_CV: P.multi_select(d.get("supporting_cv", []))
-            },
-            F.SUPPORTING_CV_ROLE: lambda d: {
-                F.SUPPORTING_CV_ROLE: P.multi_select(d.get("supporting_cv_role", []))
-            },
-            F.PLATFORM: lambda d: {
-                F.PLATFORM: P.multi_select([{"name": d.get("platform", "饭角")}])
-            },
-            F.ALBUM_LINK: lambda d: {F.ALBUM_LINK: P.url(d.get("album_link", ""))}
-            if d.get("album_link")
-            else {},
-        }
-
-        return NotionClient._apply_field_mapping(field_mapping, update_fields, kwargs)
+            update_fields,
+            kwargs,
+            time_zone,
+        )
 
     @staticmethod
     def build_partial_audio_properties(
@@ -313,24 +317,21 @@ class NotionClient:
             Notion音频页面属性字典（仅包含需要更新的字段）
         """
         F = AudioField
-        field_mapping: Dict[str, Any] = {
-            F.NAME: lambda d: {F.NAME: P.title(d.get("name", ""))},
-            F.COVER: lambda d: {F.COVER: P.file_upload(d.get("cover_id"))}
-            if d.get("cover_id")
-            else {},
-            F.PLAY: lambda d: {F.PLAY: P.number(d.get("play", 0))},
-            F.DESCRIPTION: lambda d: {
-                F.DESCRIPTION: P.rich_text(d.get("description", ""))
+        return NotionClient._build_partial(
+            {
+                F.NAME: ("title", "name", ""),
+                F.COVER: ("file_upload", "cover_id", None, True),
+                F.PLAY: ("number", "play", 0),
+                F.DESCRIPTION: ("rich_text", "description", ""),
+                F.PUBLISH_DATE: ("date", "publish_date", ""),
+                F.SINGER: ("multi_select", "singer", []),
+                F.LYRICIST: ("multi_select", "lyricist", []),
+                F.COMPOSER: ("multi_select", "composer", []),
+                F.ARRANGER: ("multi_select", "arranger", []),
+                F.MIXER: ("multi_select", "mixer", []),
+                F.LYRICS: ("rich_text", "lyrics", ""),
             },
-            F.PUBLISH_DATE: lambda d: {
-                F.PUBLISH_DATE: P.date(d.get("publish_date", ""), time_zone)
-            },
-            F.SINGER: lambda d: {F.SINGER: P.multi_select(d.get("singer", []))},
-            F.LYRICIST: lambda d: {F.LYRICIST: P.multi_select(d.get("lyricist", []))},
-            F.COMPOSER: lambda d: {F.COMPOSER: P.multi_select(d.get("composer", []))},
-            F.ARRANGER: lambda d: {F.ARRANGER: P.multi_select(d.get("arranger", []))},
-            F.MIXER: lambda d: {F.MIXER: P.multi_select(d.get("mixer", []))},
-            F.LYRICS: lambda d: {F.LYRICS: P.rich_text(d.get("lyrics", ""))},
-        }
-
-        return NotionClient._apply_field_mapping(field_mapping, update_fields, kwargs)
+            update_fields,
+            kwargs,
+            time_zone,
+        )
