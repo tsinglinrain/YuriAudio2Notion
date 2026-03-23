@@ -6,7 +6,7 @@ Notion API客户端
 负责与Notion API进行交互（异步版本）
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from notion_client import AsyncClient
 
 from app.constants.notion_fields import AlbumField, AudioField
@@ -112,134 +112,87 @@ class NotionClient:
 
     @staticmethod
     def build_properties(
-        name: str,
-        cover: str,
-        description: str,
-        description_sequel: str,
-        publish_date: str,
-        update_frequency: List[Dict[str, str]],
-        ori_price: int,
-        author_name: str,
-        up_name: str,
-        tags: List[Dict[str, str]],
-        source: str,
-        main_cv: List[Dict[str, str]],
-        main_cv_role: List[Dict[str, str]],
-        supporting_cv: List[Dict[str, str]],
-        supporting_cv_role: List[Dict[str, str]],
-        commercial_drama: str,
-        episode_count: int,
-        album_link: str,
         platform: str = "饭角",
         time_zone: str = "Asia/Shanghai",
+        **data: Any,
     ) -> Dict[str, Any]:
         """
         构建Notion页面属性
 
         Args:
-            name: 专辑名称
-            cover: 封面海报file_upload_id
-            description: 简介
-            description_sequel: 简介续
-            publish_date: 发布日期
-            update_frequency: 更新频率
-            ori_price: 原价
-            author_name: 原著作者
-            up_name: up主
-            tags: 标签列表
-            source: 来源（改编/原创）
-            main_cv: 主役CV
-            main_cv_role: 主役角色
-            supporting_cv: 协役CV
-            supporting_cv_role: 协役角色
-            commercial_drama: 商剧标识
-            episode_count: 集数
-            album_link: 专辑链接
-            platform: 平台
-            time_zone: 时区
+            platform: 平台，默认 饭角
+            time_zone: 时区，默认 Asia/Shanghai
+            **data: 专辑数据字段（name, cover, description, publish_date 等）
 
         Returns:
             Notion页面属性字典
         """
         F = AlbumField
+        cover = data.get("cover")
+        author_name = data.get("author_name", "")
+        up_name = data.get("up_name", "")
+
         return {
-            F.NAME: P.title(name),
+            F.NAME: P.title(data.get("name", "")),
             F.COVER: P.file_upload(cover),
-            F.DESCRIPTION: P.rich_text(description),
-            F.DESCRIPTION_SEQUEL: P.rich_text(description_sequel),
-            F.PUBLISH_DATE: P.date(publish_date, time_zone),
-            F.UPDATE_FREQ: P.multi_select(update_frequency),
-            F.PRICE: P.number(ori_price),
+            F.DESCRIPTION: P.rich_text(data.get("description", "")),
+            F.DESCRIPTION_SEQUEL: P.rich_text(data.get("description_sequel", "")),
+            F.PUBLISH_DATE: P.date(data.get("publish_date", ""), time_zone),
+            F.UPDATE_FREQ: P.multi_select(data.get("update_frequency", [])),
+            F.PRICE: P.number(data.get("ori_price", 0)),
             F.AUTHOR: P.select(author_name),
             F.UP_NAME: P.select(up_name),
-            F.TAGS: P.multi_select(tags),
-            F.SOURCE: P.select(source),
-            F.MAIN_CV: P.multi_select(main_cv),
-            F.MAIN_CV_ROLE: P.multi_select(main_cv_role),
-            F.SUPPORTING_CV: P.multi_select(supporting_cv),
-            F.SUPPORTING_CV_ROLE: P.multi_select(supporting_cv_role),
-            F.COMMERCIAL: P.select(commercial_drama),
-            F.EPISODE_COUNT: P.number(episode_count),
-            F.ALBUM_LINK: P.url(album_link),
+            F.TAGS: P.multi_select(data.get("tags", [])),
+            F.SOURCE: P.select(data.get("source", "")),
+            F.MAIN_CV: P.multi_select(data.get("main_cv", [])),
+            F.MAIN_CV_ROLE: P.multi_select(data.get("main_cv_role", [])),
+            F.SUPPORTING_CV: P.multi_select(data.get("supporting_cv", [])),
+            F.SUPPORTING_CV_ROLE: P.multi_select(data.get("supporting_cv_role", [])),
+            F.COMMERCIAL: P.select(data.get("commercial_drama", "")),
+            F.EPISODE_COUNT: P.number(data.get("episode_count", 0)),
+            F.ALBUM_LINK: P.url(data.get("album_link", "")),
             F.PLATFORM: P.multi_select([{"name": platform}]),
         }
 
     @staticmethod
     def build_audio_properties(
-        name: str,
-        publish_date: str,
-        description: str,
-        cover: str,
-        play: int,
-        singer: Optional[List[dict]] = None,
-        lyricist: Optional[List[dict]] = None,
-        composer: Optional[List[dict]] = None,
-        arranger: Optional[List[dict]] = None,
-        mixer: Optional[List[dict]] = None,
-        lyrics: str = "",
         platform: str = "饭角",
         time_zone: str = "Asia/Shanghai",
+        **data: Any,
     ) -> Dict[str, Any]:
         """
         构建Notion音频页面属性
 
         Args:
-            name: 音频名称
-            publish_date: 发布日期
-            description: 描述
-            cover: 封面
-            singer: 演唱
-            lyricist: 作词
-            composer: 作曲
-            arranger: 编曲
-            mixer: 混音
-            lyrics: 歌词
-            platform: 平台
-            time_zone: 时区
+            platform: 平台，默认 饭角
+            time_zone: 时区，默认 Asia/Shanghai
+            **data: 音频数据字段（name, cover, description, publish_date 等）
 
         Returns:
             Notion音频页面属性字典
         """
         F = AudioField
+        cover = data.get("cover")
+
         return {
-            F.NAME: P.title(name),
-            F.PUBLISH_DATE: P.date(publish_date, time_zone),
-            F.DESCRIPTION: P.rich_text(description),
+            F.NAME: P.title(data.get("name", "")),
+            F.PUBLISH_DATE: P.date(data.get("publish_date", ""), time_zone),
+            F.DESCRIPTION: P.rich_text(data.get("description", "")),
             F.COVER: P.file_upload(cover),
-            F.PLAY: P.number(play),
-            F.SINGER: P.multi_select(singer or []),
-            F.LYRICIST: P.multi_select(lyricist or []),
-            F.COMPOSER: P.multi_select(composer or []),
-            F.ARRANGER: P.multi_select(arranger or []),
-            F.MIXER: P.multi_select(mixer or []),
-            F.LYRICS: P.rich_text(lyrics),
+            F.PLAY: P.number(data.get("play", 0)),
+            F.SINGER: P.multi_select(data.get("singer") or []),
+            F.LYRICIST: P.multi_select(data.get("lyricist") or []),
+            F.COMPOSER: P.multi_select(data.get("composer") or []),
+            F.ARRANGER: P.multi_select(data.get("arranger") or []),
+            F.MIXER: P.multi_select(data.get("mixer") or []),
+            F.LYRICS: P.rich_text(data.get("lyrics", "")),
             F.PLATFORM: P.multi_select([{"name": platform}]),
         }
 
     @staticmethod
     def _apply_field_mapping(
         field_mapping: Dict[str, Any],
-        update_fields: List[str],
+        update_fields: list[str],
         data: Dict[str, Any],
     ) -> Dict[str, Any]:
         """遍历 update_fields，用 field_mapping 构建 Notion 属性（跳过空结果）"""
@@ -253,7 +206,7 @@ class NotionClient:
 
     @staticmethod
     def build_partial_properties(
-        update_fields: List[str],
+        update_fields: list[AlbumField],
         time_zone: str = "Asia/Shanghai",
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -344,7 +297,7 @@ class NotionClient:
 
     @staticmethod
     def build_partial_audio_properties(
-        update_fields: List[str],
+        update_fields: list[AudioField],
         time_zone: str = "Asia/Shanghai",
         **kwargs: Any,
     ) -> Dict[str, Any]:

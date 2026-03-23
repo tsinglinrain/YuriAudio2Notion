@@ -13,6 +13,7 @@ from urllib.parse import urlparse, parse_qs
 
 from app.core.processor import AlbumProcessor, AudioProcessor
 from app.api.middlewares import verify_api_key
+from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -61,7 +62,7 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
 
     try:
         # 从Notion数据中提取album id
-        album_id = request.data["properties"]["FanjiaoAlbumID"]["number"]
+        album_id = request.data["properties"][AlbumField.FANJIAO_ALBUM_ID]["number"]
         album_id = str(album_id) if album_id is not None else ""
         logger.info(f"Extracted Album ID: {album_id}")
 
@@ -182,7 +183,7 @@ async def webhook_song(
 
     try:
         # 从请求中提取url
-        url = request.data["properties"]["Audio_URL"]["url"]
+        url = request.data["properties"][AudioField.AUDIO_URL]["url"]
         logger.info(f"Extracted URL: {url}")
 
         if not url:
@@ -257,7 +258,7 @@ async def webhook_song_update(
 
     try:
         # 从请求中提取url
-        url = request.data["properties"]["Audio_URL"]["url"]
+        url = request.data["properties"][AudioField.AUDIO_URL]["url"]
         logger.info(f"Extracted URL: {url}")
 
         if not url:
@@ -298,15 +299,15 @@ async def webhook_song_update(
         logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
 
         # 处理需要更新的数据
-        update_selection: list = request.data["properties"]["UpdateAudioSelection"][
-            "multi_select"
-        ]
+        update_selection: list = request.data["properties"][
+            AudioField.UPDATE_AUDIO_SELECTION
+        ]["multi_select"]
         if not update_selection:
             logger.info("No updates selected")
             return WebhookResponse(
                 status="info", message="No updates selected in Notion data"
             )
-        update_fields = [item["name"] for item in update_selection]
+        update_fields = [AudioField(item["name"]) for item in update_selection]
         logger.info(f"Fields to update: {update_fields}")
 
         # 进行更新处理
@@ -348,7 +349,7 @@ async def webhook_data_source_update(
 
     try:
         # 从Notion数据中提取album id
-        album_id = request.data["properties"]["FanjiaoAlbumID"]["number"]
+        album_id = request.data["properties"][AlbumField.FANJIAO_ALBUM_ID]["number"]
         album_id = str(album_id) if album_id is not None else ""
         logger.info(f"Extracted Album ID: {album_id}")
 
@@ -363,15 +364,15 @@ async def webhook_data_source_update(
         logger.info(f"Page ID: {page_id}")
 
         # 处理需要更新的数据
-        update_selection: list = request.data["properties"]["Update_selection"][
-            "multi_select"
-        ]
+        update_selection: list = request.data["properties"][
+            AlbumField.UPDATE_SELECTION
+        ]["multi_select"]
         if not update_selection:
             logger.info("No updates selected")
             return WebhookResponse(
                 status="info", message="No updates selected in Notion data"
             )
-        update_fields = [item["name"] for item in update_selection]
+        update_fields = [AlbumField(item["name"]) for item in update_selection]
         logger.info(f"Fields to update: {update_fields}")
 
         # 进行更新处理

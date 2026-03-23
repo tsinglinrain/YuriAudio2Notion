@@ -65,7 +65,7 @@ class NotionService:
         self,
         album_data: Dict[str, Any],
         page_id: str,
-        update_fields: list[str],
+        update_fields: list[AlbumField],
     ) -> bool:
         """
         部分更新专辑数据到Notion（异步）
@@ -140,7 +140,7 @@ class NotionService:
         self,
         audio_data: Dict[str, Any],
         page_id: str,
-        update_fields: list[str],
+        update_fields: list[AudioField],
     ) -> bool:
         """
         部分更新音频数据到Notion（异步）
@@ -186,7 +186,7 @@ class NotionService:
     async def _prepare_partial_audio_data(
         self,
         audio_data: Dict[str, Any],
-        update_fields: list[str],
+        update_fields: list[AudioField],
     ) -> Dict[str, Any]:
         """
         根据需要更新的字段准备音频数据（异步）
@@ -361,7 +361,7 @@ class NotionService:
     async def _prepare_partial_data(
         self,
         album_data: Dict[str, Any],
-        update_fields: list[str],
+        update_fields: list[AlbumField],
     ) -> Dict[str, Any]:
         """
         根据需要更新的字段准备数据（异步）
