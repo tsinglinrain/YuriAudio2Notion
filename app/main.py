@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.api.routes import router, set_start_time
+from app.api.routes import router, APP_VERSION
 from app.clients.fanjiao import close_http_client
 from app.utils.config import config
 from app.utils.logger import setup_logger
@@ -23,8 +23,7 @@ logger = setup_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    # 记录启动时间
-    set_start_time(time.time())
+    app.state.start_time = time.time()
     logger.info(f"Application initialized in {config.ENV} mode")
     yield
     # 关闭 httpx 客户端（如果已创建）
@@ -37,7 +36,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="YuriAudio2Notion",
         description="Fanjiao to Notion webhook server",
-        version="2.0.0",
+        version=APP_VERSION,
         lifespan=lifespan,
     )
 

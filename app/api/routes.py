@@ -8,8 +8,9 @@ API路由定义
 
 import json
 import time
+from importlib.metadata import version, PackageNotFoundError
 from typing import Any, AsyncGenerator
-from fastapi import APIRouter, Header, Depends, HTTPException
+from fastapi import APIRouter, Header, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from urllib.parse import urlparse, parse_qs
@@ -26,19 +27,10 @@ logger = setup_logger(__name__)
 # 创建路由器
 router = APIRouter()
 
-# 服务启动时间（由 main.py 设置）
-_start_time: float | None = None
-
-
-def set_start_time(start_time: float) -> None:
-    """设置服务启动时间"""
-    global _start_time
-    _start_time = start_time
-
-
-def get_start_time() -> float | None:
-    """获取服务启动时间"""
-    return _start_time
+try:
+    APP_VERSION = version("yuri-audio2notion")
+except PackageNotFoundError:
+    APP_VERSION = "dev"
 
 
 # Pydantic 模型定义
@@ -71,36 +63,20 @@ async def index() -> str:
 
 
 @router.get("/health")
-async def health_check() -> dict[str, Any]:
+async def health_check(request: Request) -> dict[str, Any]:
     """
     增强的健康检查端点
     返回服务状态、版本、运行时间等信息
     """
-    start_time = get_start_time()
-    uptime_seconds = time.time() - start_time if start_time else 0
-
-    # 格式化运行时间
-    days, remainder = divmod(int(uptime_seconds), 86400)
-    hours, remainder = divmod(remainder, 3600)
-    minutes, seconds = divmod(remainder, 60)
-
-    if days > 0:
-        uptime_str = f"{days}d {hours}h {minutes}m {seconds}s"
-    elif hours > 0:
-        uptime_str = f"{hours}h {minutes}m {seconds}s"
-    elif minutes > 0:
-        uptime_str = f"{minutes}m {seconds}s"
-    else:
-        uptime_str = f"{seconds}s"
-
+    start_time = getattr(request.app.state, "start_time", None)
+    uptime_seconds = int(time.time() - start_time) if start_time else 0
     broadcaster = get_broadcaster()
 
     return {
         "status": "healthy",
-        "version": "2.0.0",
+        "version": APP_VERSION,
         "environment": config.ENV,
-        "uptime": uptime_str,
-        "uptime_seconds": int(uptime_seconds),
+        "uptime_seconds": uptime_seconds,
         "log_subscribers": broadcaster.subscriber_count,
     }
 
@@ -123,10 +99,10 @@ async def logs_stream() -> StreamingResponse:
     返回 Server-Sent Events 格式的日志流
     """
     broadcaster = get_broadcaster()
-    if broadcaster.subscriber_count >= LogBroadcaster.MAX_SUBSCRIBERS:
+    if broadcaster.subscriber_count >= LogBroadcaster.max_subscribers:
         raise HTTPException(
             status_code=429,
-            detail=f"Max subscribers ({LogBroadcaster.MAX_SUBSCRIBERS}) reached",
+            detail=f"Max subscribers ({LogBroadcaster.max_subscribers}) reached",
         )
 
     logger.info("New SSE log stream connection established")

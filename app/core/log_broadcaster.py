@@ -8,7 +8,6 @@
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import AsyncGenerator, ClassVar
 
 
@@ -38,9 +37,9 @@ class LogBroadcaster:
     支持多客户端订阅日志流
     """
 
-    MAX_SUBSCRIBERS: ClassVar[int] = 10
+    max_subscribers: ClassVar[int] = 10
 
-    _subscribers: set[asyncio.Queue[LogEntry]] = field(default_factory=set)
+    _subscribers: list[asyncio.Queue[LogEntry]] = field(default_factory=list)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
     async def subscribe(self) -> AsyncGenerator[LogEntry, None]:
@@ -55,11 +54,11 @@ class LogBroadcaster:
         """
         queue: asyncio.Queue[LogEntry] = asyncio.Queue(maxsize=100)
         async with self._lock:
-            if len(self._subscribers) >= self.MAX_SUBSCRIBERS:
+            if len(self._subscribers) >= self.max_subscribers:
                 raise RuntimeError(
-                    f"Max subscribers ({self.MAX_SUBSCRIBERS}) reached"
+                    f"Max subscribers ({self.max_subscribers}) reached"
                 )
-            self._subscribers.add(queue)
+            self._subscribers.append(queue)
 
         try:
             while True:
@@ -67,7 +66,10 @@ class LogBroadcaster:
                 yield entry
         finally:
             async with self._lock:
-                self._subscribers.discard(queue)
+                try:
+                    self._subscribers.remove(queue)
+                except ValueError:
+                    pass
 
     async def broadcast(self, entry: LogEntry) -> None:
         """
@@ -92,7 +94,10 @@ class LogBroadcaster:
 
             # 清理失效的队列
             for queue in dead_queues:
-                self._subscribers.discard(queue)
+                try:
+                    self._subscribers.remove(queue)
+                except ValueError:
+                    pass
 
     def broadcast_sync(self, entry: LogEntry) -> None:
         """
