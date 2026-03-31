@@ -8,7 +8,7 @@
 
 import asyncio
 from dataclasses import dataclass, field
-from typing import AsyncGenerator, ClassVar
+from typing import ClassVar
 
 
 @dataclass
@@ -42,12 +42,9 @@ class LogBroadcaster:
     _subscribers: list[asyncio.Queue[LogEntry]] = field(default_factory=list)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
-    async def subscribe(self) -> AsyncGenerator[LogEntry, None]:
+    async def register(self) -> asyncio.Queue[LogEntry]:
         """
-        订阅日志流
-
-        Yields:
-            LogEntry: 日志条目
+        注册订阅者，返回专属 queue。
 
         Raises:
             RuntimeError: 超过最大订阅者数量
@@ -59,17 +56,15 @@ class LogBroadcaster:
                     f"Max subscribers ({self.max_subscribers}) reached"
                 )
             self._subscribers.append(queue)
+        return queue
 
-        try:
-            while True:
-                entry = await queue.get()
-                yield entry
-        finally:
-            async with self._lock:
-                try:
-                    self._subscribers.remove(queue)
-                except ValueError:
-                    pass
+    async def unregister(self, queue: asyncio.Queue[LogEntry]) -> None:
+        """注销订阅者"""
+        async with self._lock:
+            try:
+                self._subscribers.remove(queue)
+            except ValueError:
+                pass
 
     async def broadcast(self, entry: LogEntry) -> None:
         """

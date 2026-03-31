@@ -9,6 +9,7 @@ API路由定义
 import json
 import time
 from importlib.metadata import version, PackageNotFoundError
+from pathlib import Path
 from typing import Any, AsyncGenerator
 from fastapi import APIRouter, Header, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -16,7 +17,7 @@ from pydantic import BaseModel
 from urllib.parse import urlparse, parse_qs
 
 from app.core.processor import AlbumProcessor, AudioProcessor
-from app.core.log_broadcaster import get_broadcaster, LogBroadcaster
+from app.core.log_broadcaster import get_broadcaster
 from app.api.middlewares import verify_api_key
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.logger import setup_logger
@@ -27,10 +28,24 @@ logger = setup_logger(__name__)
 # 创建路由器
 router = APIRouter()
 
-try:
-    APP_VERSION = version("yuri-audio2notion")
-except PackageNotFoundError:
-    APP_VERSION = "dev"
+def _detect_version() -> str:
+    """从 metadata 或 pyproject.toml 获取版本号"""
+    try:
+        return version("yuri-audio2notion")
+    except PackageNotFoundError:
+        pass
+    # fallback: Docker 中 --no-install-project 时 metadata 不可用
+    try:
+        import tomllib
+
+        pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+        with open(pyproject, "rb") as f:
+            return tomllib.load(f)["project"]["version"]
+    except Exception:
+        return "unknown"
+
+
+APP_VERSION = _detect_version()
 
 
 # Pydantic 模型定义
@@ -81,17 +96,6 @@ async def health_check(request: Request) -> dict[str, Any]:
     }
 
 
-async def log_event_generator() -> AsyncGenerator[str, None]:
-    """
-    SSE 日志事件生成器
-    """
-    broadcaster = get_broadcaster()
-
-    async for entry in broadcaster.subscribe():
-        data = json.dumps(entry.to_dict(), ensure_ascii=False)
-        yield f"data: {data}\n\n"
-
-
 @router.get("/logs/stream", dependencies=[Depends(verify_api_key)])
 async def logs_stream() -> StreamingResponse:
     """
@@ -99,16 +103,25 @@ async def logs_stream() -> StreamingResponse:
     返回 Server-Sent Events 格式的日志流
     """
     broadcaster = get_broadcaster()
-    if broadcaster.subscriber_count >= LogBroadcaster.max_subscribers:
-        raise HTTPException(
-            status_code=429,
-            detail=f"Max subscribers ({LogBroadcaster.max_subscribers}) reached",
-        )
+
+    try:
+        queue = await broadcaster.register()
+    except RuntimeError as e:
+        raise HTTPException(status_code=429, detail=str(e))
 
     logger.info("New SSE log stream connection established")
 
+    async def event_stream() -> AsyncGenerator[str, None]:
+        try:
+            while True:
+                entry = await queue.get()
+                data = json.dumps(entry.to_dict(), ensure_ascii=False)
+                yield f"data: {data}\n\n"
+        finally:
+            await broadcaster.unregister(queue)
+
     return StreamingResponse(
-        log_event_generator(),
+        event_stream(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
