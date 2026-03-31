@@ -114,6 +114,19 @@ class CoverCache:
             self._save_cache()
             logger.info(f"Cached cover: {image_url[:50]}... -> {file_upload_id}")
 
+    async def delete(self, image_url: str) -> None:
+        """
+        删除指定缓存条目（用于失效过期的 file_upload_id）
+
+        Args:
+            image_url: 图片 URL
+        """
+        async with self.async_lock:
+            if image_url in self._cache:
+                del self._cache[image_url]
+                self._save_cache()
+                logger.info(f"Cache invalidated: {image_url[:50]}...")
+
     def get_all(self) -> Dict[str, str]:
         """获取所有缓存（用于调试）"""
         return self._cache.copy()

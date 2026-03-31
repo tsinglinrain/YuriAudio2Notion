@@ -182,23 +182,40 @@ class CoverUploader:
 
         return file_upload_id
 
+    async def _is_upload_valid(self, file_upload_id: str) -> bool:
+        """检查 file_upload_id 是否仍然有效（状态为 uploaded）"""
+        try:
+            resp = await self.client.file_uploads.retrieve(
+                file_upload_id=file_upload_id
+            )
+            return resp.get("status") == "uploaded"
+        except Exception as e:
+            logger.warning(f"Failed to verify upload status for {file_upload_id}: {e}")
+            return False
+
     async def image_upload(self) -> str:
         """
         上传图片到Notion（带缓存机制）
 
         查找顺序：
-        1. 本地内存/文件缓存
+        1. 本地内存/文件缓存（校验有效性）
         2. Notion file uploads API
         3. 实际上传
 
         Returns:
             file_upload_id: 上传成功后的文件ID
         """
-        # 1. 先查本地缓存
+        # 1. 先查本地缓存，命中后校验是否已过期
         cached_id = cover_cache.get(self.image_url)
         if cached_id:
-            logger.info(f"Cache hit for {self.image_name}: {cached_id}")
-            return cached_id
+            if await self._is_upload_valid(cached_id):
+                logger.info(f"Cache hit for {self.image_name}: {cached_id}")
+                return cached_id
+            else:
+                logger.warning(
+                    f"Cached file upload {cached_id} is expired, invalidating cache and re-uploading"
+                )
+                await cover_cache.delete(self.image_url)
 
         # 2. 查询 Notion 已上传文件列表
         logger.info(f"Cache miss, querying Notion file uploads for: {self.image_name}")

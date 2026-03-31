@@ -6,18 +6,30 @@ Notion API客户端
 负责与Notion API进行交互（异步版本）
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from notion_client import AsyncClient
 
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.config import config
 from app.utils.logger import setup_logger
+from app.utils.notion_property import NotionProp as P
 
 logger = setup_logger(__name__)
 
 
 class NotionClient:
     """Notion API异步客户端"""
+
+    _BUILDERS = {
+        "title": P.title,
+        "rich_text": P.rich_text,
+        "number": P.number,
+        "select": P.select,
+        "multi_select": P.multi_select,
+        "file_upload": P.file_upload,
+        "url": P.url,
+        "date": P.date,
+    }
 
     def __init__(
         self, data_source_id: Optional[str] = None, token: Optional[str] = None
@@ -111,123 +123,131 @@ class NotionClient:
 
     @staticmethod
     def build_properties(
-        name: str,
-        cover: str,
-        description: str,
-        description_sequel: str,
-        publish_date: str,
-        update_frequency: List[Dict[str, str]],
-        ori_price: int,
-        author_name: str,
-        up_name: str,
-        tags: List[Dict[str, str]],
-        source: str,
-        main_cv: List[Dict[str, str]],
-        main_cv_role: List[Dict[str, str]],
-        supporting_cv: List[Dict[str, str]],
-        supporting_cv_role: List[Dict[str, str]],
-        commercial_drama: str,
-        episode_count: int,
-        album_link: str,
         platform: str = "饭角",
         time_zone: str = "Asia/Shanghai",
+        **data: Any,
     ) -> Dict[str, Any]:
         """
         构建Notion页面属性
 
         Args:
-            name: 专辑名称
-            cover: 封面海报file_upload_id
-            description: 简介
-            description_sequel: 简介续
-            publish_date: 发布日期
-            update_frequency: 更新频率
-            ori_price: 原价
-            author_name: 原著作者
-            up_name: up主
-            tags: 标签列表
-            source: 来源（改编/原创）
-            main_cv: 主役CV
-            main_cv_role: 主役角色
-            supporting_cv: 协役CV
-            supporting_cv_role: 协役角色
-            commercial_drama: 商剧标识
-            episode_count: 集数
-            album_link: 专辑链接
-            platform: 平台
-            time_zone: 时区
+            platform: 平台，默认 饭角
+            time_zone: 时区，默认 Asia/Shanghai
+            **data: 专辑数据字段（name, cover, description, publish_date 等）
 
         Returns:
             Notion页面属性字典
         """
+        F = AlbumField
+        cover = data.get("cover")
+        author_name = data.get("author_name", "")
+        up_name = data.get("up_name", "")
+
         return {
-            "Name": {"title": [{"text": {"content": name}}]},
-            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]},
-            "简介": {"rich_text": [{"text": {"content": description}}]},
-            "简介续": {"rich_text": [{"text": {"content": description_sequel}}]},
-            "Publish Date": {
-                "date": {
-                    "start": publish_date,
-                    "time_zone": time_zone,
-                }
-            },
-            "更新": {"multi_select": update_frequency},
-            "Price": {"number": ori_price},
-            "原著": {"select": {"name": author_name}},
-            "up主": {"select": {"name": up_name}},
-            "Tags": {"multi_select": tags},
-            "来源": {"select": {"name": source}},
-            "cv主役": {"multi_select": main_cv},
-            "饰演角色": {"multi_select": main_cv_role},
-            "cv协役": {"multi_select": supporting_cv},
-            "协役饰演角色": {"multi_select": supporting_cv_role},
-            "商剧": {"select": {"name": commercial_drama}},
-            "Episode Count": {"number": episode_count},
-            "Album Link": {"url": album_link},
-            "Platform": {"multi_select": [{"name": platform}]},
+            F.NAME: P.title(data.get("name", "")),
+            F.COVER: P.file_upload(cover),
+            F.DESCRIPTION: P.rich_text(data.get("description", "")),
+            F.DESCRIPTION_SEQUEL: P.rich_text(data.get("description_sequel", "")),
+            F.PUBLISH_DATE: P.date(data.get("publish_date", ""), time_zone),
+            F.UPDATE_FREQ: P.multi_select(data.get("update_frequency", [])),
+            F.PRICE: P.number(data.get("ori_price", 0)),
+            F.AUTHOR: P.select(author_name),
+            F.UP_NAME: P.select(up_name),
+            F.TAGS: P.multi_select(data.get("tags", [])),
+            F.SOURCE: P.select(data.get("source", "")),
+            F.MAIN_CV: P.multi_select(data.get("main_cv", [])),
+            F.MAIN_CV_ROLE: P.multi_select(data.get("main_cv_role", [])),
+            F.SUPPORTING_CV: P.multi_select(data.get("supporting_cv", [])),
+            F.SUPPORTING_CV_ROLE: P.multi_select(data.get("supporting_cv_role", [])),
+            F.COMMERCIAL: P.select(data.get("commercial_drama", "")),
+            F.EPISODE_COUNT: P.number(data.get("episode_count", 0)),
+            F.ALBUM_LINK: P.url(data.get("album_link", "")),
+            F.PLATFORM: P.multi_select([{"name": platform}]),
         }
 
     @staticmethod
     def build_audio_properties(
-        name: str,
-        publish_date: str,
-        description: str,
-        cover: str,
-        play: int,
         platform: str = "饭角",
         time_zone: str = "Asia/Shanghai",
+        **data: Any,
     ) -> Dict[str, Any]:
         """
         构建Notion音频页面属性
 
         Args:
-            name: 音频名称
-            publish_date: 发布日期
-            description: 描述
-            cover: 封面
-            platform: 平台
-            time_zone: 时区
+            platform: 平台，默认 饭角
+            time_zone: 时区，默认 Asia/Shanghai
+            **data: 音频数据字段（name, cover, description, publish_date 等）
 
         Returns:
             Notion音频页面属性字典
         """
+        F = AudioField
+        cover = data.get("cover")
+
         return {
-            "Name": {"title": [{"text": {"content": name}}]},
-            "Publish Date": {
-                "date": {
-                    "start": publish_date,
-                    "time_zone": time_zone,
-                }
-            },
-            "Description": {"rich_text": [{"text": {"content": description}}]},
-            "Cover": {"files": [{"type": "file_upload", "file_upload": {"id": cover}}]},
-            "播放": {"number": play},
-            "Platform": {"multi_select": [{"name": platform}]},
+            F.NAME: P.title(data.get("name", "")),
+            F.PUBLISH_DATE: P.date(data.get("publish_date", ""), time_zone),
+            F.DESCRIPTION: P.rich_text(data.get("description", "")),
+            F.COVER: P.file_upload(cover),
+            F.PLAY: P.number(data.get("play", 0)),
+            F.SINGER: P.multi_select(data.get("singer") or []),
+            F.LYRICIST: P.multi_select(data.get("lyricist") or []),
+            F.COMPOSER: P.multi_select(data.get("composer") or []),
+            F.ARRANGER: P.multi_select(data.get("arranger") or []),
+            F.MIXER: P.multi_select(data.get("mixer") or []),
+            F.LYRICS: P.rich_text(data.get("lyrics", "")),
+            F.PLATFORM: P.multi_select([{"name": platform}]),
         }
 
     @staticmethod
+    def _build_partial(
+        field_defs: dict,
+        update_fields: list[str],
+        data: Dict[str, Any],
+        time_zone: str = "Asia/Shanghai",
+    ) -> Dict[str, Any]:
+        """
+        根据声明式字段定义和需要更新的字段，直接构建 Notion 属性。
+
+        field_defs 值的格式:
+        - callable: 接收 data 返回属性字典（用于特殊字段）
+        - (prop_type, data_key, default): 始终包含的字段
+        - (prop_type, data_key, default, True): 值为空时跳过的字段
+
+        prop_type: "title" | "rich_text" | "number" | "select" |
+                   "multi_select" | "file_upload" | "url" | "date"
+        """
+        properties: Dict[str, Any] = {}
+        for field in update_fields:
+            if field not in field_defs:
+                continue
+
+            spec = field_defs[field]
+            if callable(spec):
+                props = spec(data)
+                if props:
+                    properties.update(props)
+                continue
+
+            prop_type, data_key = spec[0], spec[1]
+            default = spec[2] if len(spec) > 2 else None
+            skip_empty = len(spec) > 3 and spec[3]
+
+            if skip_empty and not data.get(data_key):
+                continue
+
+            builder = NotionClient._BUILDERS[prop_type]
+            if prop_type == "date":
+                properties[field] = builder(data.get(data_key, ""), time_zone)
+            else:
+                properties[field] = builder(data.get(data_key, default))
+
+        return properties
+
+    @staticmethod
     def build_partial_properties(
-        update_fields: List[str],
+        update_fields: list[AlbumField],
         time_zone: str = "Asia/Shanghai",
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -245,146 +265,43 @@ class NotionClient:
         Returns:
             Notion页面属性字典（仅包含需要更新的字段）
         """
-        # 定义字段名到Notion属性的映射
-        # 每个 lambda 接收 data 和 tz 参数
-        F = AlbumField  # 简化引用
-        field_mapping: Dict[str, Any] = {
-            # 标题类型 (title)
-            F.NAME: lambda data, tz: {
-                F.NAME: {"title": [{"text": {"content": data.get("name", "")}}]}
+        F = AlbumField
+        return NotionClient._build_partial(
+            {
+                F.NAME: ("title", "name", ""),
+                F.COVER: ("file_upload", "cover", None, True),
+                F.COVER_HORIZONTAL: ("file_upload", "cover_horizontal", None, True),
+                F.COVER_SQUARE: ("file_upload", "cover_square", None, True),
+                F.PLAY: ("number", "play", 0),
+                F.LIKED: ("number", "liked", 0),
+                F.PRICE: ("number", "ori_price", 0),
+                F.EPISODE_COUNT: ("number", "episode_count", 0),
+                F.PUBLISH_DATE: ("date", "publish_date", "", True),
+                F.DESCRIPTION: ("rich_text", "description", ""),
+                F.DESCRIPTION_SEQUEL: ("rich_text", "description_sequel", ""),
+                F.AUTHOR: ("select", "author_name", "", True),
+                F.UP_NAME: ("select", "up_name", "", True),
+                F.SOURCE: ("select", "source", "", True),
+                F.COMMERCIAL: ("select", "commercial_drama", "", True),
+                F.UPDATE_FREQ: ("multi_select", "update_frequency", []),
+                F.TAGS: ("multi_select", "tags", []),
+                F.MAIN_CV: ("multi_select", "main_cv", []),
+                F.MAIN_CV_ROLE: ("multi_select", "main_cv_role", []),
+                F.SUPPORTING_CV: ("multi_select", "supporting_cv", []),
+                F.SUPPORTING_CV_ROLE: ("multi_select", "supporting_cv_role", []),
+                F.PLATFORM: lambda d: {
+                    F.PLATFORM: P.multi_select([{"name": d.get("platform", "饭角")}])
+                },
+                F.ALBUM_LINK: ("url", "album_link", "", True),
             },
-            # 文件类型 (files)
-            F.COVER: lambda data, tz: {
-                F.COVER: {
-                    "files": [
-                        {
-                            "type": "file_upload",
-                            "file_upload": {"id": data.get("cover", "")},
-                        }
-                    ]
-                }
-            }
-            if data.get("cover")
-            else {},
-            F.COVER_HORIZONTAL: lambda data, tz: {
-                F.COVER_HORIZONTAL: {
-                    "files": [
-                        {
-                            "type": "file_upload",
-                            "file_upload": {"id": data.get("cover_horizontal", "")},
-                        }
-                    ]
-                }
-            }
-            if data.get("cover_horizontal")
-            else {},
-            F.COVER_SQUARE: lambda data, tz: {
-                F.COVER_SQUARE: {
-                    "files": [
-                        {
-                            "type": "file_upload",
-                            "file_upload": {"id": data.get("cover_square", "")},
-                        }
-                    ]
-                }
-            }
-            if data.get("cover_square")
-            else {},
-            # 数字类型 (number)
-            F.PLAY: lambda data, tz: {F.PLAY: {"number": data.get("play", 0)}},
-            F.LIKED: lambda data, tz: {F.LIKED: {"number": data.get("liked", 0)}},
-            F.PRICE: lambda data, tz: {F.PRICE: {"number": data.get("ori_price", 0)}},
-            F.EPISODE_COUNT: lambda data, tz: {
-                F.EPISODE_COUNT: {"number": data.get("episode_count", 0)}
-            },
-            # 日期类型 (date)
-            F.PUBLISH_DATE: lambda data, tz: {
-                F.PUBLISH_DATE: {
-                    "date": {
-                        "start": data.get("publish_date", ""),
-                        "time_zone": tz,
-                    }
-                }
-            }
-            if data.get("publish_date")
-            else {},
-            # 富文本类型 (rich_text)
-            F.DESCRIPTION: lambda data, tz: {
-                F.DESCRIPTION: {
-                    "rich_text": [{"text": {"content": data.get("description", "")}}]
-                }
-            },
-            F.DESCRIPTION_SEQUEL: lambda data, tz: {
-                F.DESCRIPTION_SEQUEL: {
-                    "rich_text": [
-                        {"text": {"content": data.get("description_sequel", "")}}
-                    ]
-                }
-            },
-            # 单选类型 (select)
-            F.AUTHOR: lambda data, tz: {
-                F.AUTHOR: {"select": {"name": data.get("author_name", "")}}
-            }
-            if data.get("author_name")
-            else {},
-            F.UP_NAME: lambda data, tz: {
-                F.UP_NAME: {"select": {"name": data.get("up_name", "")}}
-            }
-            if data.get("up_name")
-            else {},
-            F.SOURCE: lambda data, tz: {
-                F.SOURCE: {"select": {"name": data.get("source", "")}}
-            }
-            if data.get("source")
-            else {},
-            F.COMMERCIAL: lambda data, tz: {
-                F.COMMERCIAL: {"select": {"name": data.get("commercial_drama", "")}}
-            }
-            if data.get("commercial_drama")
-            else {},
-            # 多选类型 (multi_select)
-            F.UPDATE_FREQ: lambda data, tz: {
-                F.UPDATE_FREQ: {"multi_select": data.get("update_frequency", [])}
-            },
-            F.TAGS: lambda data, tz: {F.TAGS: {"multi_select": data.get("tags", [])}},
-            F.MAIN_CV: lambda data, tz: {
-                F.MAIN_CV: {"multi_select": data.get("main_cv", [])}
-            },
-            F.MAIN_CV_ROLE: lambda data, tz: {
-                F.MAIN_CV_ROLE: {"multi_select": data.get("main_cv_role", [])}
-            },
-            F.SUPPORTING_CV: lambda data, tz: {
-                F.SUPPORTING_CV: {"multi_select": data.get("supporting_cv", [])}
-            },
-            F.SUPPORTING_CV_ROLE: lambda data, tz: {
-                F.SUPPORTING_CV_ROLE: {
-                    "multi_select": data.get("supporting_cv_role", [])
-                }
-            },
-            F.PLATFORM: lambda data, tz: {
-                F.PLATFORM: {"multi_select": [{"name": data.get("platform", "饭角")}]}
-            },
-            # URL类型 (url)
-            F.ALBUM_LINK: lambda data, tz: {
-                F.ALBUM_LINK: {"url": data.get("album_link", "")}
-            }
-            if data.get("album_link")
-            else {},
-        }
-
-        properties: Dict[str, Any] = {}
-
-        for field in update_fields:
-            if field in field_mapping:
-                field_props = field_mapping[field](kwargs, time_zone)
-                if field_props:  # 只添加非空属性
-                    properties.update(field_props)
-
-        return properties
+            update_fields,
+            kwargs,
+            time_zone,
+        )
 
     @staticmethod
     def build_partial_audio_properties(
-        update_fields: List[str],
+        update_fields: list[AudioField],
         time_zone: str = "Asia/Shanghai",
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -393,49 +310,28 @@ class NotionClient:
 
         Args:
             update_fields: 需要更新的字段列表
+            time_zone: 时区，默认 Asia/Shanghai
             **kwargs: 字段对应的值
 
         Returns:
             Notion音频页面属性字典（仅包含需要更新的字段）
         """
-        # 定义字段名到Notion属性的映射
-        F = AudioField  # 简化引用
-        field_mapping: Dict[str, Any] = {
-            # 封面相关
-            F.COVER: lambda data: {
-                F.COVER: {
-                    "files": [
-                        {
-                            "type": "file_upload",
-                            "file_upload": {"id": data.get("cover_id", "")},
-                        }
-                    ]
-                }
+        F = AudioField
+        return NotionClient._build_partial(
+            {
+                F.NAME: ("title", "name", ""),
+                F.COVER: ("file_upload", "cover_id", None, True),
+                F.PLAY: ("number", "play", 0),
+                F.DESCRIPTION: ("rich_text", "description", ""),
+                F.PUBLISH_DATE: ("date", "publish_date", ""),
+                F.SINGER: ("multi_select", "singer", []),
+                F.LYRICIST: ("multi_select", "lyricist", []),
+                F.COMPOSER: ("multi_select", "composer", []),
+                F.ARRANGER: ("multi_select", "arranger", []),
+                F.MIXER: ("multi_select", "mixer", []),
+                F.LYRICS: ("rich_text", "lyrics", ""),
             },
-            # 播放量
-            F.PLAY: lambda data: {F.PLAY: {"number": data.get("play", 0)}},
-            # 描述
-            F.DESCRIPTION: lambda data: {
-                F.DESCRIPTION: {
-                    "rich_text": [{"text": {"content": data.get("description", "")}}]
-                }
-            },
-            # 发布日期
-            F.PUBLISH_DATE: lambda data: {
-                F.PUBLISH_DATE: {
-                    "date": {
-                        "start": data.get("publish_date", ""),
-                        "time_zone": time_zone,
-                    }
-                }
-            },
-        }
-
-        properties: Dict[str, Any] = {}
-
-        for field in update_fields:
-            if field in field_mapping:
-                field_props = field_mapping[field](kwargs)
-                properties.update(field_props)
-
-        return properties
+            update_fields,
+            kwargs,
+            time_zone,
+        )

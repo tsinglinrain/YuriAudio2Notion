@@ -1,4 +1,4 @@
-FROM python:3.14.2-alpine AS builder
+FROM python:3.14.3-alpine AS builder
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ COPY pyproject.toml uv.lock ./
 
 RUN uv sync --frozen --no-dev --no-install-project
 
-FROM python:3.14.2-alpine
+FROM python:3.14.3-alpine
 WORKDIR /app
 
 RUN apk add --no-cache curl
@@ -28,4 +28,4 @@ USER appuser
 EXPOSE 5050
 HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:5050/ || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5050", "--workers", "3"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5050"]
