@@ -6,20 +6,46 @@ API路由定义
 包含所有webhook端点
 """
 
-from typing import Any
-from fastapi import APIRouter, Header, Depends, HTTPException
+import json
+import time
+from importlib.metadata import version, PackageNotFoundError
+from pathlib import Path
+from typing import Any, AsyncGenerator
+from fastapi import APIRouter, Header, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from urllib.parse import urlparse, parse_qs
 
 from app.core.processor import AlbumProcessor, AudioProcessor
+from app.core.log_broadcaster import get_broadcaster
 from app.api.middlewares import verify_api_key
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.logger import setup_logger
+from app.utils.config import config
 
 logger = setup_logger(__name__)
 
 # 创建路由器
 router = APIRouter()
+
+def _detect_version() -> str:
+    """从 metadata 或 pyproject.toml 获取版本号"""
+    try:
+        return version("yuri-audio2notion")
+    except PackageNotFoundError:
+        pass
+    # fallback: Docker 中 --no-install-project 时 metadata 不可用
+    try:
+        import tomllib
+
+        pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+        with open(pyproject, "rb") as f:
+            return tomllib.load(f)["project"]["version"]
+    except Exception:
+        return "unknown"
+
+
+APP_VERSION = _detect_version()
 
 
 # Pydantic 模型定义
@@ -47,8 +73,62 @@ class WebhookResponse(BaseModel):
 
 @router.get("/")
 async def index() -> str:
-    """健康检查端点"""
+    """简单健康检查端点"""
     return "YuriAudio2Notion webhook server is running"
+
+
+@router.get("/health")
+async def health_check(request: Request) -> dict[str, Any]:
+    """
+    增强的健康检查端点
+    返回服务状态、版本、运行时间等信息
+    """
+    start_time = getattr(request.app.state, "start_time", None)
+    uptime_seconds = int(time.time() - start_time) if start_time else 0
+    broadcaster = get_broadcaster()
+
+    return {
+        "status": "healthy",
+        "version": APP_VERSION,
+        "environment": config.ENV,
+        "uptime_seconds": uptime_seconds,
+        "log_subscribers": broadcaster.subscriber_count,
+    }
+
+
+@router.get("/logs/stream", dependencies=[Depends(verify_api_key)])
+async def logs_stream() -> StreamingResponse:
+    """
+    SSE 实时日志推送端点
+    返回 Server-Sent Events 格式的日志流
+    """
+    broadcaster = get_broadcaster()
+
+    try:
+        queue = await broadcaster.register()
+    except RuntimeError as e:
+        raise HTTPException(status_code=429, detail=str(e))
+
+    logger.info("New SSE log stream connection established")
+
+    async def event_stream() -> AsyncGenerator[str, None]:
+        try:
+            while True:
+                entry = await queue.get()
+                data = json.dumps(entry.to_dict(), ensure_ascii=False)
+                yield f"data: {data}\n\n"
+        finally:
+            await broadcaster.unregister(queue)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/webhook-data-source", dependencies=[Depends(verify_api_key)])

@@ -7,7 +7,36 @@
 
 import logging
 import sys
+from datetime import datetime
 from typing import Optional
+
+from app.core.log_broadcaster import LogEntry, get_broadcaster
+
+
+class BroadcastHandler(logging.Handler):
+    """
+    自定义日志处理器，将日志推送到广播器
+    """
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """
+        处理日志记录，推送到广播器
+
+        Args:
+            record: 日志记录
+        """
+        try:
+            entry = LogEntry(
+                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                level=record.levelname,
+                logger_name=record.name,
+                message=self.format(record),
+            )
+            broadcaster = get_broadcaster()
+            broadcaster.broadcast_sync(entry)
+        except Exception:
+            # 避免日志处理器异常影响主程序
+            pass
 
 
 def setup_logger(
@@ -34,17 +63,25 @@ def setup_logger(
     # 只在 "app" 根 logger 上添加 handler，子 logger 通过传播机制输出
     if name == "app":
         # 创建控制台处理器
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(level)
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(level)
 
         # 设置格式
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
-        handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
 
-        logger.addHandler(handler)
+        logger.addHandler(console_handler)
+
+        # 创建广播处理器
+        broadcast_handler = BroadcastHandler()
+        broadcast_handler.setLevel(level)
+        # 广播处理器只发送消息内容，不包含时间戳等（因为 LogEntry 已包含）
+        broadcast_formatter = logging.Formatter("%(message)s")
+        broadcast_handler.setFormatter(broadcast_formatter)
+        logger.addHandler(broadcast_handler)
 
         # 阻止日志传播到 root logger，避免 uvicorn 等框架的 handler 重复输出
         logger.propagate = False
