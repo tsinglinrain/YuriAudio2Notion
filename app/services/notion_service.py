@@ -6,6 +6,7 @@ Notion数据上传服务
 负责将处理好的数据上传到Notion（异步版本）
 """
 
+import asyncio
 from typing import Dict, Any, Optional
 
 from app.clients.notion import NotionClient
@@ -30,6 +31,20 @@ class NotionService:
             data_source_id: Notion数据库ID，默认使用配置中的值
         """
         self.client = NotionClient(data_source_id=data_source_id)
+
+    @staticmethod
+    async def _upload_cover(
+        cover_url: str, image_name: str
+    ) -> Optional[str]:
+        """上传封面图片，返回 file_upload_id，URL 为空时返回 None"""
+        cover_url = cover_url.split("?")[0] if cover_url else ""
+        if not cover_url:
+            logger.warning(f"Cover URL is empty for: {image_name}, skipping cover upload")
+            return None
+        async with CoverUploader(
+            image_url=cover_url, image_name=image_name
+        ) as cover_uploader:
+            return await cover_uploader.image_upload()
 
     async def upload_album_data(
         self, album_data: Dict[str, Any], page_id: Optional[str] = None
@@ -209,19 +224,10 @@ class NotionService:
 
         # 处理封面相关字段，square 为空时 fallback 到 cover
         if F.COVER in update_fields:
-            cover_url = audio_data.get("cover_square", "") or audio_data.get(
-                "cover", ""
-            )
-            if cover_url:
-                cover_url = cover_url.split("?")[0]
-                async with CoverUploader(
-                    image_url=cover_url, image_name=name
-                ) as cover_uploader:
-                    result["cover_id"] = await cover_uploader.image_upload()
-            else:
-                logger.warning(
-                    f"Both cover_square and cover are empty for audio: {name}, skipping cover upload"
-                )
+            cover_url = audio_data.get("cover_square", "") or audio_data.get("cover", "")
+            cover_id = await self._upload_cover(cover_url, name)
+            if cover_id:
+                result["cover_id"] = cover_id
 
         # 处理播放量
         if F.PLAY in update_fields:
@@ -289,17 +295,7 @@ class NotionService:
 
         # cover上传
         cover_url = album_data.get("cover", "")
-        cover_url = cover_url.split("?")[0] if cover_url else ""
-        if cover_url:
-            async with CoverUploader(
-                image_url=cover_url, image_name=name
-            ) as cover_uploader:
-                cover_file_id = await cover_uploader.image_upload()
-        else:
-            logger.warning(
-                f"Cover URL is empty for album: {name}, skipping cover upload"
-            )
-            cover_file_id = None
+        cover_file_id = await self._upload_cover(cover_url, name)
 
         # 解析描述
         parser = DescriptionParser(description)
@@ -400,33 +396,26 @@ class NotionService:
         if F.NAME in update_fields:
             result["name"] = name
 
-        # 封面处理 (需要上传)
+        # 封面处理 (需要上传)，多个封面并行上传
+        cover_tasks = {}
         if F.COVER in update_fields:
-            cover_url = album_data.get("cover", "")
-            if cover_url:
-                cover_url = cover_url.split("?")[0]
-                async with CoverUploader(
-                    image_url=cover_url, image_name=name
-                ) as cover_uploader:
-                    result["cover"] = await cover_uploader.image_upload()
-
+            cover_tasks["cover"] = self._upload_cover(
+                album_data.get("cover", ""), name
+            )
         if F.COVER_HORIZONTAL in update_fields:
-            cover_horizontal_url = album_data.get("cover_horizontal", "")
-            if cover_horizontal_url:
-                cover_horizontal_url = cover_horizontal_url.split("?")[0]
-                async with CoverUploader(
-                    image_url=cover_horizontal_url, image_name=f"{name}_horizontal"
-                ) as cover_uploader:
-                    result["cover_horizontal"] = await cover_uploader.image_upload()
-
+            cover_tasks["cover_horizontal"] = self._upload_cover(
+                album_data.get("cover_horizontal", ""), f"{name}_horizontal"
+            )
         if F.COVER_SQUARE in update_fields:
-            cover_square_url = album_data.get("cover_square", "")
-            if cover_square_url:
-                cover_square_url = cover_square_url.split("?")[0]
-                async with CoverUploader(
-                    image_url=cover_square_url, image_name=f"{name}_square"
-                ) as cover_uploader:
-                    result["cover_square"] = await cover_uploader.image_upload()
+            cover_tasks["cover_square"] = self._upload_cover(
+                album_data.get("cover_square", ""), f"{name}_square"
+            )
+        if cover_tasks:
+            keys = list(cover_tasks.keys())
+            ids = await asyncio.gather(*cover_tasks.values())
+            for key, file_id in zip(keys, ids):
+                if file_id:
+                    result[key] = file_id
 
         # 数字类型
         if F.PLAY in update_fields:
@@ -478,27 +467,26 @@ class NotionService:
         if F.TAGS in update_fields and parser:
             result["tags"] = DescriptionParser.format_to_list(parser.tags)
 
-        # CV 相关处理
-        main_cv_ori = album_data.get("main_cv", [])
-        supporting_cv_ori = album_data.get("supporting_cv", [])
+        # CV 相关处理（按需提取）
+        if F.MAIN_CV in update_fields or F.MAIN_CV_ROLE in update_fields:
+            main_cv_ori = album_data.get("main_cv", [])
+            if F.MAIN_CV in update_fields:
+                result["main_cv"] = FanjiaoService.format_list_data("name", main_cv_ori)
+            if F.MAIN_CV_ROLE in update_fields:
+                result["main_cv_role"] = FanjiaoService.format_list_data(
+                    "role_name", main_cv_ori
+                )
 
-        if F.MAIN_CV in update_fields:
-            result["main_cv"] = FanjiaoService.format_list_data("name", main_cv_ori)
-
-        if F.MAIN_CV_ROLE in update_fields:
-            result["main_cv_role"] = FanjiaoService.format_list_data(
-                "role_name", main_cv_ori
-            )
-
-        if F.SUPPORTING_CV in update_fields:
-            result["supporting_cv"] = FanjiaoService.format_list_data(
-                "name", supporting_cv_ori
-            )
-
-        if F.SUPPORTING_CV_ROLE in update_fields:
-            result["supporting_cv_role"] = FanjiaoService.format_list_data(
-                "role_name", supporting_cv_ori
-            )
+        if F.SUPPORTING_CV in update_fields or F.SUPPORTING_CV_ROLE in update_fields:
+            supporting_cv_ori = album_data.get("supporting_cv", [])
+            if F.SUPPORTING_CV in update_fields:
+                result["supporting_cv"] = FanjiaoService.format_list_data(
+                    "name", supporting_cv_ori
+                )
+            if F.SUPPORTING_CV_ROLE in update_fields:
+                result["supporting_cv_role"] = FanjiaoService.format_list_data(
+                    "role_name", supporting_cv_ori
+                )
 
         if F.PLATFORM in update_fields:
             result["platform"] = "饭角"
@@ -529,17 +517,7 @@ class NotionService:
 
         # cover上传，square 为空时 fallback 到 cover
         cover_url = audio_data.get("cover_square", "") or audio_data.get("cover", "")
-        cover_url = cover_url.split("?")[0] if cover_url else ""
-        if cover_url:
-            async with CoverUploader(
-                image_url=cover_url, image_name=name
-            ) as cover_uploader:
-                cover_file_id = await cover_uploader.image_upload()
-        else:
-            logger.warning(
-                f"Cover URL is empty for audio: {name}, skipping cover upload"
-            )
-            cover_file_id = None
+        cover_file_id = await self._upload_cover(cover_url, name)
 
         # 解析描述中的音乐制作信息
         credits = DescriptionAudioParser(description)

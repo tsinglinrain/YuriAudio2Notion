@@ -122,8 +122,7 @@ class CoverCache:
             image_url: 图片 URL
         """
         async with self.async_lock:
-            if image_url in self._cache:
-                del self._cache[image_url]
+            if self._cache.pop(image_url, None) is not None:
                 self._save_cache()
                 logger.info(f"Cache invalidated: {image_url[:50]}...")
 

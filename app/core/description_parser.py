@@ -9,6 +9,8 @@
 import re
 from typing import List, Tuple
 
+from app.utils.notion_property import format_to_multi_select
+
 
 class DescriptionParser:
     """专辑描述解析器"""
@@ -194,13 +196,5 @@ class DescriptionParser:
 
     @staticmethod
     def format_to_list(items: List[str]) -> List[dict]:
-        """
-        将字符串列表转换为Notion格式
-
-        Args:
-            items: 字符串列表
-
-        Returns:
-            格式化后的列表 [{"name": "item1"}, {"name": "item2"}]
-        """
-        return [{"name": item} for item in items]
+        """将字符串列表转换为Notion multi_select 格式"""
+        return format_to_multi_select(items)

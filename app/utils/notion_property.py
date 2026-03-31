@@ -7,7 +7,12 @@ Notion property value builders
 封装 Notion API 的嵌套 JSON 属性结构，供 NotionClient 的 build_* 方法复用。
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, List
+
+
+def format_to_multi_select(items: List[str]) -> List[Dict[str, str]]:
+    """将字符串列表转换为 Notion multi_select 格式 [{"name": "item"}, ...]"""
+    return [{"name": item} for item in items]
 
 
 class NotionProp:

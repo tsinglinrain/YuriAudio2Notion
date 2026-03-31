@@ -9,6 +9,8 @@
 import re
 from typing import List, Dict
 
+from app.utils.notion_property import format_to_multi_select
+
 # 职责名称 → 字段名映射（值为列表，支持一个职责对应多个字段，如"作编曲"）
 _ROLE_MAP: Dict[str, List[str]] = {
     "演唱": ["singer"],
@@ -114,13 +116,5 @@ class DescriptionAudioParser:
 
     @staticmethod
     def format_to_list(items: List[str]) -> List[dict]:
-        """
-        将字符串列表转换为Notion格式
-
-        Args:
-            items: 字符串列表
-
-        Returns:
-            格式化后的列表 [{"name": "item1"}, {"name": "item2"}]
-        """
-        return [{"name": item} for item in items]
+        """将字符串列表转换为Notion multi_select 格式"""
+        return format_to_multi_select(items)
