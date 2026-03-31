@@ -9,7 +9,7 @@
 import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import AsyncGenerator
+from typing import AsyncGenerator, ClassVar
 
 
 @dataclass
@@ -38,6 +38,8 @@ class LogBroadcaster:
     支持多客户端订阅日志流
     """
 
+    MAX_SUBSCRIBERS: ClassVar[int] = 10
+
     _subscribers: set[asyncio.Queue[LogEntry]] = field(default_factory=set)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
@@ -47,9 +49,16 @@ class LogBroadcaster:
 
         Yields:
             LogEntry: 日志条目
+
+        Raises:
+            RuntimeError: 超过最大订阅者数量
         """
         queue: asyncio.Queue[LogEntry] = asyncio.Queue(maxsize=100)
         async with self._lock:
+            if len(self._subscribers) >= self.MAX_SUBSCRIBERS:
+                raise RuntimeError(
+                    f"Max subscribers ({self.MAX_SUBSCRIBERS}) reached"
+                )
             self._subscribers.add(queue)
 
         try:

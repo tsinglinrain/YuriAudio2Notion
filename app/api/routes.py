@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from urllib.parse import urlparse, parse_qs
 
 from app.core.processor import AlbumProcessor, AudioProcessor
-from app.core.log_broadcaster import get_broadcaster
+from app.core.log_broadcaster import get_broadcaster, LogBroadcaster
 from app.api.middlewares import verify_api_key
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.logger import setup_logger
@@ -116,12 +116,19 @@ async def log_event_generator() -> AsyncGenerator[str, None]:
         yield f"data: {data}\n\n"
 
 
-@router.get("/logs/stream")
+@router.get("/logs/stream", dependencies=[Depends(verify_api_key)])
 async def logs_stream() -> StreamingResponse:
     """
     SSE 实时日志推送端点
     返回 Server-Sent Events 格式的日志流
     """
+    broadcaster = get_broadcaster()
+    if broadcaster.subscriber_count >= LogBroadcaster.MAX_SUBSCRIBERS:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Max subscribers ({LogBroadcaster.MAX_SUBSCRIBERS}) reached",
+        )
+
     logger.info("New SSE log stream connection established")
 
     return StreamingResponse(
