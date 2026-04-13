@@ -9,7 +9,7 @@ dependencies = [
     "httpx>=0.28.1",
     "notion-client>=2.7.0",
     "python-dotenv>=1.2.1",
-    "uvicorn[standard]>=0.40.0",
+    "uvicorn[standard]>=0.44.0",
 ]
 
 [dependency-groups]
