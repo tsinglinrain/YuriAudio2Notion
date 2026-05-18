@@ -26,6 +26,9 @@ class CoverUploader:
         """同步初始化"""
         self.token = token or config.NOTION_TOKEN
         self.client = AsyncClient(auth=self.token)
+        if image_url.startswith("http://"):
+            image_url = "https://" + image_url[len("http://") :]
+            logger.warning(f"Upgraded image URL from HTTP to HTTPS: {image_url}")
         self.image_url = image_url
         self.image_name = image_name
         # 延迟初始化，先设为 None
