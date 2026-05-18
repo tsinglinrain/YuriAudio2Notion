@@ -7,7 +7,6 @@
 """
 
 import json
-import threading
 import asyncio
 from pathlib import Path
 from typing import Optional, Dict
@@ -21,15 +20,11 @@ class CoverCache:
     """封面图片缓存管理器（单例模式）"""
 
     _instance = None
-    _new_lock = threading.Lock()  # 用于 __new__ 的线程锁
     _async_lock = None  # 用于异步操作的锁，延迟初始化
 
     def __new__(cls):
         if cls._instance is None:
-            with cls._new_lock:
-                # 双重检查锁定（Double-Checked Locking）
-                if cls._instance is None:
-                    cls._instance = super().__new__(cls)
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self):
