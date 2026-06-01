@@ -10,6 +10,12 @@ from typing import Dict, Any, Optional
 
 from app.clients.notion import NotionClient
 from app.constants.notion_fields import AlbumField, AudioField
+from app.utils.notion_builder import (
+    build_album_properties,
+    build_audio_properties,
+    build_partial_album_properties,
+    build_partial_audio_properties,
+)
 from app.core.description_parser import DescriptionParser
 from app.core.description_audio_parser import DescriptionAudioParser
 from app.core.image_upload import CoverUploader
@@ -49,10 +55,10 @@ class NotionService:
             processed_data = await self._prepare_data(album_data)
 
             # 构建属性
-            properties = NotionClient.build_properties(**processed_data)
+            properties = build_album_properties(**processed_data)
 
             # 创建或更新页面
-            await self.client.manage_page(properties, page_id)
+            await self.client.update_page(properties, page_id)
 
             logger.info(f"Successfully uploaded data for: {processed_data['name']}")
             return True
@@ -85,7 +91,7 @@ class NotionService:
             processed_data = await self._prepare_partial_data(album_data, update_fields)
 
             # 构建部分属性
-            properties = NotionClient.build_partial_properties(
+            properties = build_partial_album_properties(
                 update_fields=update_fields,
                 **processed_data,
             )
@@ -124,10 +130,10 @@ class NotionService:
             processed_data = await self._prepare_audio_data(audio_data)
 
             # 构建属性
-            properties = NotionClient.build_audio_properties(**processed_data)
+            properties = build_audio_properties(**processed_data)
 
-            # 创建或更新页面
-            await self.client.manage_page(properties, page_id, emoji="🎵")
+            # 更新页面
+            await self.client.update_page(properties, page_id, emoji="🎵")
 
             logger.info(f"Successfully uploaded data for: {processed_data['name']}")
             return True
@@ -162,7 +168,7 @@ class NotionService:
             )
 
             # 构建部分属性
-            properties = NotionClient.build_partial_audio_properties(
+            properties = build_partial_audio_properties(
                 update_fields=update_fields,
                 **processed_data,
             )
@@ -384,7 +390,7 @@ class NotionService:
         # 需要 DescriptionParser 的字段集合
         parser_fields = {
             F.EPISODE_COUNT,
-            F.DESCRIPTION,
+            F.DESCRIPTION_MAIN,
             F.DESCRIPTION_SEQUEL,
             F.SOURCE,
             F.TAGS,
@@ -449,7 +455,7 @@ class NotionService:
 
         # 富文本类型
         if parser:
-            if F.DESCRIPTION in update_fields:
+            if F.DESCRIPTION_MAIN in update_fields:
                 result["description"] = parser.main_description
             if F.DESCRIPTION_SEQUEL in update_fields:
                 result["description_sequel"] = parser.additional_info

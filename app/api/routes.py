@@ -131,14 +131,14 @@ async def logs_stream() -> StreamingResponse:
     )
 
 
-@router.post("/webhook-data-source", dependencies=[Depends(verify_api_key)])
+@router.post("/webhook-album", dependencies=[Depends(verify_api_key)])
 async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookResponse:
     """
     处理来自Notion数据库的webhook请求
-    适用于在某个data source中专门设置一个空白page，在里面填写url，
+    适用于在某个data source中专门设置一个空白page，在里面填写album id，
     随后会在指定data source生成该链接对应的page
     """
-    logger.info("Received Notion webhook-data-source request")
+    logger.info("Received Notion webhook-albume request")
 
     try:
         # 从Notion数据中提取album id
@@ -183,73 +183,7 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
         )
 
 
-@router.post("/webhook-page", dependencies=[Depends(verify_api_key)])
-async def webhook_page(url: str | None = Header(None)) -> WebhookResponse:
-    """
-    处理来自Notion页面的webhook请求
-    期望在请求头中找到'url'键
-    适用于在某个page中设置button，在其中的请求头中填入url，
-    随后会在指定data_source生成该链接对应的page
-    """
-    logger.info("Received Notion webhook-page request")
-
-    if not url:
-        logger.error("'url' header not found in request")
-        raise HTTPException(
-            status_code=400, detail="'url' header is missing from the request headers."
-        )
-
-    logger.info(f"Found URL in headers: {url}")
-
-    try:
-        # 处理URL
-        processor = AlbumProcessor()
-        success = await processor.process_url(url)
-
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to process album data")
-
-        return WebhookResponse(
-            status="success", message="Webhook received and data processed!"
-        )
-
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        logger.error(f"Unexpected error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail=f"An unexpected error occurred: {e}"
-        )
-
-
-@router.post("/webhook-url", dependencies=[Depends(verify_api_key)])
-async def webhook_url(request: WebhookUrlRequest) -> WebhookResponse:
-    """
-    处理直接传入URL的webhook请求
-    需要在请求体中提供url参数
-    """
-    logger.info(f"Received webhook-url request for: {request.url}")
-
-    try:
-        # 处理URL
-        processor = AlbumProcessor()
-        success = await processor.process_url(request.url)
-
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to process album data")
-
-        return WebhookResponse(
-            status="success", message="Webhook received and data processed!"
-        )
-
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        logger.error(f"Processing failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/webhook-song", dependencies=[Depends(verify_api_key)])
+@router.post("/webhook-audio", dependencies=[Depends(verify_api_key)])
 async def webhook_song(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
@@ -259,7 +193,7 @@ async def webhook_song(
     适用于在某个data source中专门设置一个空白page，在里面填写url，
     随后会在指定data source生成该链接对应的page
     """
-    logger.info("Received Notion webhook-song request")
+    logger.info("Received Notion webhook-audio request")
 
     try:
         # 从请求中提取url
@@ -325,7 +259,7 @@ async def webhook_song(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/webhook-song-update", dependencies=[Depends(verify_api_key)])
+@router.post("/webhook-audio-update", dependencies=[Depends(verify_api_key)])
 async def webhook_song_update(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
@@ -334,7 +268,7 @@ async def webhook_song_update(
     处理来自 Notion 数据库的 webhook 请求
     根据页面中选择的更新项，对对应音频的部分属性进行更新
     """
-    logger.info("Received Notion webhook-song-update request")
+    logger.info("Received Notion webhook-audio-update request")
 
     try:
         # 从请求中提取url
@@ -418,14 +352,14 @@ async def webhook_song_update(
         )
 
 
-@router.post("/webhook-data-source-update", dependencies=[Depends(verify_api_key)])
+@router.post("/webhook-album-update", dependencies=[Depends(verify_api_key)])
 async def webhook_data_source_update(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """
     对data source中的某些property进行更新时触发的webhook端点
     """
-    logger.info("Received Notion webhook-data-source-update request")
+    logger.info("Received Notion webhook-album-update request")
 
     try:
         # 从Notion数据中提取album id
@@ -483,7 +417,7 @@ async def webhook_data_source_update(
         )
 
 
-@router.post("/webhook-data-source-debug", dependencies=[Depends(verify_api_key)])
+@router.post("/webhook-debug", dependencies=[Depends(verify_api_key)])
 async def webhook_data_source_debug(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:

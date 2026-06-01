@@ -47,7 +47,7 @@ Utils → Clients → Services → Core (Processor) → API (Routes)
 - **Audio pipeline**: `AudioProcessor` → `FanjiaoAudioService` + `NotionService` — handles individual audio tracks/songs
 
 **Key flow for album processing:**
-1. Notion button sends a POST webhook to `/webhook-data-source`
+1. Notion button sends a POST webhook to `/webhook-album`
 2. `routes.py` extracts `FanjiaoAlbumID` (number field) from the Notion page properties
 3. `AlbumProcessor.process_id()` calls `FanjiaoService.fetch_album_data()`
 4. `FanjiaoService` uses `FanjiaoAlbumClient` and `FanjiaoCVClient` to fetch data, then `description_parser.py` to extract tags/up主/episode counts from the description text
@@ -57,13 +57,11 @@ Utils → Clients → Services → Core (Processor) → API (Routes)
 
 | Endpoint | Trigger source | Notes |
 |---|---|---|
-| `POST /webhook-data-source` | Notion data source button | Main workflow; reads `FanjiaoAlbumID` number field |
-| `POST /webhook-data-source-update` | Notion data source button | Partial update; reads `Update_selection` multi-select |
-| `POST /webhook-page` | Notion page button | Reads URL from request header |
-| `POST /webhook-url` | Direct HTTP call | Reads URL from request body |
-| `POST /webhook-song` | Notion data source button | Audio track processing; reads `Audio_URL` url field |
-| `POST /webhook-song-update` | Notion data source button | Partial audio update; reads `UpdateAudioSelection` multi-select |
-| `POST /webhook-data-source-debug` | Any | Logs and echoes the full Notion payload |
+| `POST /webhook-album` | Notion data source button | Main workflow; reads `FanjiaoAlbumID` number field |
+| `POST /webhook-album-update` | Notion data source button | Partial update; reads `Update_selection` multi-select |
+| `POST /webhook-audio` | Notion data source button | Audio track processing; reads `Audio_URL` url field |
+| `POST /webhook-audio-update` | Notion data source button | Partial audio update; reads `UpdateAudioSelection` multi-select |
+| `POST /webhook-debug` | Any | Logs and echoes the full Notion payload |
 
 All endpoints require the `YURI-API-KEY` header or `api_key` query param when `API_KEY` is set in env.
 
