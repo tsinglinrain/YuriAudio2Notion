@@ -13,8 +13,7 @@ from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.notion_builder import (
     build_album_properties,
     build_audio_properties,
-    build_partial_album_properties,
-    build_partial_audio_properties,
+    subset,
 )
 from app.core.description_parser import DescriptionParser
 from app.core.description_audio_parser import DescriptionAudioParser
@@ -52,13 +51,13 @@ class NotionService:
         """
         try:
             # 准备数据
-            processed_data = await self._prepare_data(album_data)
+            processed_data = await self._prepare_album_data(album_data)
 
             # 构建属性
             properties = build_album_properties(**processed_data)
 
             # 创建或更新页面
-            await self.client.update_page(properties, page_id)
+            await self.client.update_page(page_id, properties)
 
             logger.info(f"Successfully uploaded data for: {processed_data['name']}")
             return True
@@ -88,13 +87,11 @@ class NotionService:
         """
         try:
             # 准备部分更新数据
-            processed_data = await self._prepare_partial_data(album_data, update_fields)
+            processed_data = await self._prepare_album_data(album_data, update_fields)
 
             # 构建部分属性
-            properties = build_partial_album_properties(
-                update_fields=update_fields,
-                **processed_data,
-            )
+            all_props = build_album_properties(**processed_data)
+            properties = subset(all_props, update_fields)
 
             if not properties:
                 logger.warning(
@@ -133,7 +130,7 @@ class NotionService:
             properties = build_audio_properties(**processed_data)
 
             # 更新页面
-            await self.client.update_page(properties, page_id, emoji="🎵")
+            await self.client.update_page(page_id, properties, emoji="🎵")
 
             logger.info(f"Successfully uploaded data for: {processed_data['name']}")
             return True
@@ -163,15 +160,13 @@ class NotionService:
         """
         try:
             # 准备部分更新数据
-            processed_data = await self._prepare_partial_audio_data(
+            processed_data = await self._prepare_audio_data(
                 audio_data, update_fields
             )
 
             # 构建部分属性
-            properties = build_partial_audio_properties(
-                update_fields=update_fields,
-                **processed_data,
-            )
+            all_props = build_audio_properties(**processed_data)
+            properties = subset(all_props, update_fields)
 
             if not properties:
                 logger.warning(
@@ -189,32 +184,117 @@ class NotionService:
             logger.error(f"Failed to update partial audio data: {str(e)}")
             return False
 
-    async def _prepare_partial_audio_data(
+    async def _prepare_album_data(
         self,
-        audio_data: Dict[str, Any],
-        update_fields: list[AudioField],
+        album_data: Dict[str, Any],
+        update_fields: list[AlbumField] | None = None,
     ) -> Dict[str, Any]:
         """
-        根据需要更新的字段准备音频数据（异步）
+        将原始专辑数据处理成 Notion 需要的格式（异步）
 
-        只处理需要的字段，避免不必要的API调用
+        所有非 cover 字段无条件准备（廉价 CPU 操作）。
+        cover 上传按 update_fields 过滤（昂贵 I/O 操作）：
+        - None 表示全量更新，上传所有 cover
+        - 传入字段列表时，仅上传列表中的 cover
 
         Args:
-            audio_data: 从Fanjiao获取的原始音频数据
-            update_fields: 需要更新的字段列表
+            album_data: 从Fanjiao获取的原始数据
+            update_fields: 需要更新的字段列表，None 表示全量
 
         Returns:
             处理后的数据
         """
-        result: Dict[str, Any] = {}
+        F = AlbumField
+        name = album_data.get("name", "")
+        description = album_data.get("description", "")
+        ori_price = album_data.get("ori_price", 0)
+
+        # Cover 上传（仅上传 update_fields 中包含的 cover 字段）
+        wanted = set(update_fields) if update_fields is not None else None
+        covers: Dict[str, str] = {}
+        cover_defs = [
+            (F.COVER, "cover", name),
+            (F.COVER_HORIZONTAL, "cover_horizontal", f"{name}_horizontal"),
+            (F.COVER_SQUARE, "cover_square", f"{name}_square"),
+        ]
+        for field, data_key, upload_name in cover_defs:
+            if wanted is not None and field not in wanted:
+                continue
+            url = album_data.get(data_key, "")
+            if url:
+                url = url.split("?")[0]
+                async with CoverUploader(
+                    image_url=url, image_name=upload_name
+                ) as uploader:
+                    covers[data_key] = await uploader.image_upload()
+            elif field == F.COVER:
+                logger.warning(
+                    f"Cover URL is empty for album: {name}, skipping cover upload"
+                )
+
+        # 解析描述
+        parser = DescriptionParser(description)
+
+        # CV
+        main_cv_ori = album_data.get("main_cv", [])
+        supporting_cv_ori = album_data.get("supporting_cv", [])
+
+        return {
+            "name": name,
+            **covers,
+            "description": parser.main_description,
+            "description_sequel": parser.additional_info,
+            "publish_date": album_data.get("publish_date", "").replace("+08:00", "Z"),
+            "play": album_data.get("play", 0),
+            "liked": album_data.get("liked", 0),
+            "ori_price": ori_price,
+            "episode_count": parser.episode_count,
+            "author_name": album_data.get("author_name", ""),
+            "up_name": album_data.get("up_name", ""),
+            "source": "改编" if "原著" in parser.additional_info else "原创",
+            "commercial_drama": "商剧" if ori_price > 0 else "非商",
+            "update_frequency": DescriptionParser.format_to_list(
+                album_data.get("update_frequency", [])
+            ),
+            "tags": DescriptionParser.format_to_list(parser.tags),
+            "main_cv": FanjiaoService.format_list_data("name", main_cv_ori),
+            "main_cv_role": FanjiaoService.format_list_data("role_name", main_cv_ori),
+            "supporting_cv": FanjiaoService.format_list_data(
+                "name", supporting_cv_ori
+            ),
+            "supporting_cv_role": FanjiaoService.format_list_data(
+                "role_name", supporting_cv_ori
+            ),
+            "album_link": album_data.get("album_url", ""),
+        }
+
+    async def _prepare_audio_data(
+        self,
+        audio_data: Dict[str, Any],
+        update_fields: list[AudioField] | None = None,
+    ) -> Dict[str, Any]:
+        """
+        将原始Audio数据处理成Notion需要的格式（异步）
+
+        cover 上传按 update_fields 过滤：
+        - None 表示全量更新，上传 cover
+        - 传入字段列表时，仅当 COVER 在列表中才上传
+
+        Args:
+            audio_data: 从Fanjiao获取的原始Audio数据
+            update_fields: 需要更新的字段列表，None 表示全量
+
+        Returns:
+            处理后的Audio数据
+        """
+        F = AudioField
         name = audio_data.get("name", "")
-        F = AudioField  # 简化引用
+        logger.info(f"Preparing audio data for: {name}")
+        description = audio_data.get("description", "")
 
-        if F.NAME in update_fields:
-            result["name"] = name
-
-        # 处理封面相关字段，square 为空时 fallback 到 cover
-        if F.COVER in update_fields:
+        # Cover 上传（square 为空时 fallback 到 cover）
+        cover_id = None
+        if update_fields is None or F.COVER in update_fields:
             cover_url = audio_data.get("cover_square", "") or audio_data.get(
                 "cover", ""
             )
@@ -222,340 +302,21 @@ class NotionService:
                 cover_url = cover_url.split("?")[0]
                 async with CoverUploader(
                     image_url=cover_url, image_name=name
-                ) as cover_uploader:
-                    result["cover_id"] = await cover_uploader.image_upload()
+                ) as uploader:
+                    cover_id = await uploader.image_upload()
             else:
                 logger.warning(
-                    f"Both cover_square and cover are empty for audio: {name}, skipping cover upload"
+                    f"Cover URL is empty for audio: {name}, skipping cover upload"
                 )
-
-        # 处理播放量
-        if F.PLAY in update_fields:
-            result["play"] = audio_data.get("play", 0)
-
-        if F.DESCRIPTION in update_fields:
-            result["description"] = audio_data.get("description", "")
-
-        # 音乐制作信息字段：从 description 解析，按需延迟创建解析器
-        credits_fields = {
-            F.SINGER,
-            F.LYRICIST,
-            F.COMPOSER,
-            F.ARRANGER,
-            F.MIXER,
-            F.LYRICS,
-        }
-        credits = (
-            DescriptionAudioParser(audio_data.get("description", ""))
-            if credits_fields & set(update_fields)
-            else None
-        )
-        if credits:
-            if F.SINGER in update_fields:
-                result["singer"] = DescriptionAudioParser.format_to_list(credits.singer)
-            if F.LYRICIST in update_fields:
-                result["lyricist"] = DescriptionAudioParser.format_to_list(
-                    credits.lyricist
-                )
-            if F.COMPOSER in update_fields:
-                result["composer"] = DescriptionAudioParser.format_to_list(
-                    credits.composer
-                )
-            if F.ARRANGER in update_fields:
-                result["arranger"] = DescriptionAudioParser.format_to_list(
-                    credits.arranger
-                )
-            if F.MIXER in update_fields:
-                result["mixer"] = DescriptionAudioParser.format_to_list(credits.mixer)
-            if F.LYRICS in update_fields:
-                result["lyrics"] = credits.lyrics
-
-        if F.PUBLISH_DATE in update_fields:
-            publish_date = audio_data.get("publish_date", "")
-            publish_date = publish_date.replace("+08:00", "Z")
-            result["publish_date"] = publish_date
-
-        return result
-
-    async def _prepare_data(self, album_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        将原始数据处理成Notion需要的格式（异步）
-
-        Args:
-            album_data: 从Fanjiao获取的原始数据
-
-        Returns:
-            处理后的数据
-        """
-        # 基础信息
-        album_link = album_data.get("album_url", "")
-        name = album_data.get("name", "")
-        description = album_data.get("description", "")
-        up_name = album_data.get("up_name", "")
-
-        # cover上传
-        cover_url = album_data.get("cover", "")
-        cover_url = cover_url.split("?")[0] if cover_url else ""
-        if cover_url:
-            async with CoverUploader(
-                image_url=cover_url, image_name=name
-            ) as cover_uploader:
-                cover_file_id = await cover_uploader.image_upload()
-        else:
-            logger.warning(
-                f"Cover URL is empty for album: {name}, skipping cover upload"
-            )
-            cover_file_id = None
-
-        # 解析描述
-        parser = DescriptionParser(description)
-        processed_description = parser.main_description
-        description_sequel = parser.additional_info
-        tags = DescriptionParser.format_to_list(parser.tags)
-        episode_count = parser.episode_count
-
-        # 判断是否改编
-        source = "改编" if "原著" in description_sequel else "原创"
-
-        # 日期处理
-        publish_date = album_data.get("publish_date", "")
-        publish_date = publish_date.replace("+08:00", "Z")
-
-        # 更新频率处理
-        update_frequency = album_data.get("update_frequency", [])
-        update_frequency = DescriptionParser.format_to_list(update_frequency)
-
-        # 其他属性
-        ori_price = album_data.get("ori_price", 0)
-        author_name = album_data.get("author_name", "")
-
-        # CV信息处理
-        main_cv_ori = album_data.get("main_cv", [])
-        main_cv = FanjiaoService.format_list_data("name", main_cv_ori)
-        main_cv_role = FanjiaoService.format_list_data("role_name", main_cv_ori)
-
-        supporting_cv_ori = album_data.get("supporting_cv", [])
-        supporting_cv = FanjiaoService.format_list_data("name", supporting_cv_ori)
-        supporting_cv_role = FanjiaoService.format_list_data(
-            "role_name", supporting_cv_ori
-        )
-
-        # 商剧判断
-        commercial_drama = "商剧" if ori_price > 0 else "非商"
-
-        return {
-            "name": name,
-            "cover": cover_file_id,
-            "description": processed_description,
-            "description_sequel": description_sequel,
-            "publish_date": publish_date,
-            "update_frequency": update_frequency,
-            "ori_price": ori_price,
-            "author_name": author_name,
-            "up_name": up_name,
-            "tags": tags,
-            "source": source,
-            "main_cv": main_cv,
-            "main_cv_role": main_cv_role,
-            "supporting_cv": supporting_cv,
-            "supporting_cv_role": supporting_cv_role,
-            "commercial_drama": commercial_drama,
-            "episode_count": episode_count,
-            "album_link": album_link,
-        }
-
-    async def _prepare_partial_data(
-        self,
-        album_data: Dict[str, Any],
-        update_fields: list[AlbumField],
-    ) -> Dict[str, Any]:
-        """
-        根据需要更新的字段准备数据（异步）
-
-        只处理需要的字段，避免不必要的API调用。
-        支持所有可更新且 Fanjiao API 提供的字段。
-
-        Args:
-            album_data: 从Fanjiao获取的原始数据
-            update_fields: 需要更新的字段列表
-
-        Returns:
-            处理后的数据
-        """
-        result: Dict[str, Any] = {}
-        name = album_data.get("name", "")
-        description = album_data.get("description", "")
-        F = AlbumField  # 简化引用
-
-        # 需要 DescriptionParser 的字段集合
-        parser_fields = {
-            F.EPISODE_COUNT,
-            F.DESCRIPTION_MAIN,
-            F.DESCRIPTION_SEQUEL,
-            F.SOURCE,
-            F.TAGS,
-        }
-        # 仅当需要时才创建 parser（避免重复解析）
-        parser = (
-            DescriptionParser(description)
-            if parser_fields & set(update_fields)
-            else None
-        )
-
-        # 标题类型
-        if F.NAME in update_fields:
-            result["name"] = name
-
-        # 封面处理 (需要上传)
-        if F.COVER in update_fields:
-            cover_url = album_data.get("cover", "")
-            if cover_url:
-                cover_url = cover_url.split("?")[0]
-                async with CoverUploader(
-                    image_url=cover_url, image_name=name
-                ) as cover_uploader:
-                    result["cover"] = await cover_uploader.image_upload()
-
-        if F.COVER_HORIZONTAL in update_fields:
-            cover_horizontal_url = album_data.get("cover_horizontal", "")
-            if cover_horizontal_url:
-                cover_horizontal_url = cover_horizontal_url.split("?")[0]
-                async with CoverUploader(
-                    image_url=cover_horizontal_url, image_name=f"{name}_horizontal"
-                ) as cover_uploader:
-                    result["cover_horizontal"] = await cover_uploader.image_upload()
-
-        if F.COVER_SQUARE in update_fields:
-            cover_square_url = album_data.get("cover_square", "")
-            if cover_square_url:
-                cover_square_url = cover_square_url.split("?")[0]
-                async with CoverUploader(
-                    image_url=cover_square_url, image_name=f"{name}_square"
-                ) as cover_uploader:
-                    result["cover_square"] = await cover_uploader.image_upload()
-
-        # 数字类型
-        if F.PLAY in update_fields:
-            result["play"] = album_data.get("play", 0)
-
-        if F.LIKED in update_fields:
-            result["liked"] = album_data.get("liked", 0)
-
-        if F.PRICE in update_fields:
-            result["ori_price"] = album_data.get("ori_price", 0)
-
-        if F.EPISODE_COUNT in update_fields and parser:
-            result["episode_count"] = parser.episode_count
-
-        # 日期类型
-        if F.PUBLISH_DATE in update_fields:
-            publish_date = album_data.get("publish_date", "")
-            publish_date = publish_date.replace("+08:00", "Z")
-            result["publish_date"] = publish_date
-
-        # 富文本类型
-        if parser:
-            if F.DESCRIPTION_MAIN in update_fields:
-                result["description"] = parser.main_description
-            if F.DESCRIPTION_SEQUEL in update_fields:
-                result["description_sequel"] = parser.additional_info
-
-        # 单选类型
-        if F.AUTHOR in update_fields:
-            result["author_name"] = album_data.get("author_name", "")
-
-        if F.UP_NAME in update_fields:
-            result["up_name"] = album_data.get("up_name", "")
-
-        if F.SOURCE in update_fields and parser:
-            result["source"] = "改编" if "原著" in parser.additional_info else "原创"
-
-        if F.COMMERCIAL in update_fields:
-            ori_price = album_data.get("ori_price", 0)
-            result["commercial_drama"] = "商剧" if ori_price > 0 else "非商"
-
-        # 多选类型
-        if F.UPDATE_FREQ in update_fields:
-            update_frequency = album_data.get("update_frequency", [])
-            result["update_frequency"] = DescriptionParser.format_to_list(
-                update_frequency
-            )
-
-        if F.TAGS in update_fields and parser:
-            result["tags"] = DescriptionParser.format_to_list(parser.tags)
-
-        # CV 相关处理
-        main_cv_ori = album_data.get("main_cv", [])
-        supporting_cv_ori = album_data.get("supporting_cv", [])
-
-        if F.MAIN_CV in update_fields:
-            result["main_cv"] = FanjiaoService.format_list_data("name", main_cv_ori)
-
-        if F.MAIN_CV_ROLE in update_fields:
-            result["main_cv_role"] = FanjiaoService.format_list_data(
-                "role_name", main_cv_ori
-            )
-
-        if F.SUPPORTING_CV in update_fields:
-            result["supporting_cv"] = FanjiaoService.format_list_data(
-                "name", supporting_cv_ori
-            )
-
-        if F.SUPPORTING_CV_ROLE in update_fields:
-            result["supporting_cv_role"] = FanjiaoService.format_list_data(
-                "role_name", supporting_cv_ori
-            )
-
-        if F.PLATFORM in update_fields:
-            result["platform"] = "饭角"
-
-        # URL类型
-        if F.ALBUM_LINK in update_fields:
-            result["album_link"] = album_data.get("album_url", "")
-
-        return result
-
-    async def _prepare_audio_data(self, audio_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        将原始Audio数据处理成Notion需要的格式（异步）
-
-        Args:
-            audio_data: 从Fanjiao获取的原始Audio数据
-
-        Returns:
-            处理后的Audio数据
-        """
-        # 基础信息
-        name = audio_data.get("name", "")
-        logger.info(f"Preparing audio data for: {name}")
-        description = audio_data.get("description", "")
-        publish_date = audio_data.get("publish_date", "")
-        publish_date = publish_date.replace("+08:00", "Z")
-        play = audio_data.get("play", 0)
-
-        # cover上传，square 为空时 fallback 到 cover
-        cover_url = audio_data.get("cover_square", "") or audio_data.get("cover", "")
-        cover_url = cover_url.split("?")[0] if cover_url else ""
-        if cover_url:
-            async with CoverUploader(
-                image_url=cover_url, image_name=name
-            ) as cover_uploader:
-                cover_file_id = await cover_uploader.image_upload()
-        else:
-            logger.warning(
-                f"Cover URL is empty for audio: {name}, skipping cover upload"
-            )
-            cover_file_id = None
 
         # 解析描述中的音乐制作信息
         credits = DescriptionAudioParser(description)
 
-        return {
+        result: Dict[str, Any] = {
             "name": name,
             "description": description,
-            "cover": cover_file_id,
-            "publish_date": publish_date,
-            "play": play,
+            "publish_date": audio_data.get("publish_date", "").replace("+08:00", "Z"),
+            "play": audio_data.get("play", 0),
             "singer": DescriptionAudioParser.format_to_list(credits.singer),
             "lyricist": DescriptionAudioParser.format_to_list(credits.lyricist),
             "composer": DescriptionAudioParser.format_to_list(credits.composer),
@@ -563,3 +324,8 @@ class NotionService:
             "mixer": DescriptionAudioParser.format_to_list(credits.mixer),
             "lyrics": credits.lyrics,
         }
+
+        if cover_id:
+            result["cover"] = cover_id
+
+        return result
