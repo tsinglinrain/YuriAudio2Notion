@@ -136,7 +136,6 @@ docker-compose up -d
 - `FANJIAO_BASE_URL`: Fanjiao专辑API地址
 - `FANJIAO_CV_BASE_URL`: Fanjiao CV API地址
 - `NOTION_TOKEN`: Notion集成Token
-- `NOTION_DATA_SOURCE_ID`: Notion数据库ID
 - `API_KEY`: Webhook API密钥（可选）
 - `ENV`: 运行环境（development/production）
 - `HOST`: 服务器主机（默认0.0.0.0）

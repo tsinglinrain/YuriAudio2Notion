@@ -20,15 +20,9 @@ logger = setup_logger(__name__)
 class AlbumProcessor:
     """专辑处理器"""
 
-    def __init__(self, data_source_id: Optional[str] = None):
-        """
-        初始化处理器
-
-        Args:
-            data_source_id: Notion数据库ID，默认使用配置中的值
-        """
+    def __init__(self):
         self.fanjiao_service = FanjiaoService()
-        self.notion_service = NotionService(data_source_id=data_source_id)
+        self.notion_service = NotionService()
 
     async def process_url(self, url: str, page_id: str) -> bool:
         """

@@ -75,14 +75,6 @@ class Config:
             raise RuntimeError("Missing required env NOTION_TOKEN")
         return value
 
-    @property
-    def NOTION_DATA_SOURCE_ID(self) -> str:
-        """Notion 数据库ID"""
-        value = os.getenv("NOTION_DATA_SOURCE_ID")
-        if not value:
-            raise RuntimeError("Missing required env NOTION_DATA_SOURCE_ID")
-        return value
-
     # API 配置
     @property
     def API_KEY(self) -> Optional[str]:

@@ -70,7 +70,7 @@ All endpoints require the `YURI-API-KEY` header or `api_key` query param when `A
 Copy `.env.template` to `.env`. All required env vars (except `API_KEY`) will raise `RuntimeError` at access time if missing — they are not validated at startup.
 
 - `FANJIAO_SALT`, `FANJIAO_BASE_URL`, `FANJIAO_CV_BASE_URL`, `FANJIAO_AUDIO_BASE_URL` — Fanjiao API credentials
-- `NOTION_TOKEN`, `NOTION_DATA_SOURCE_ID` — Notion integration token and default data source ID
+- `NOTION_TOKEN` — Notion integration token
 - `API_KEY` — optional; if unset, all requests pass through with a warning log
 - `ENV` — `development` enables uvicorn `reload=True`; `production` disables it
 - `PORT` — defaults to `5050`
@@ -80,7 +80,6 @@ Config is a singleton at `app/utils/config.py:config`.
 ## Key Conventions
 
 - **Notion field names** are defined as `StrEnum` constants in `app/constants/notion_fields.py` (`AlbumField`, `AudioField`). Always use these enums instead of hardcoded strings when referencing Notion properties.
-- The `data_source_id` passed to `AlbumProcessor` overrides `NOTION_DATA_SOURCE_ID` from config, allowing the webhook to write to the database that triggered it (extracted from `request.data["parent"]["data_source_id"]`).
 - `app/utils/cache.py` provides local file caching under `app/data_cache/` (mounted as a Docker volume).
 - `cli.py` at the project root reads album URLs from `waiting_up_private.txt` (gitignored) for local batch processing.
 - Scripts in `scripts/` (`inspect_data_source.py`, `inspect_page.py`) are standalone debugging utilities.

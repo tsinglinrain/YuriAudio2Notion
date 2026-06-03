@@ -153,13 +153,11 @@ async def webhook_album(request: WebhookDataSourceRequest) -> WebhookResponse:
                 status="warning", message="Album ID is empty in Notion data"
             )
 
-        # 获取页面和数据库信息
+        # 获取页面信息
         page_id = request.data["id"]
-        data_source_id = request.data["parent"]["data_source_id"]
-        logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
 
         # 处理URL
-        processor = AlbumProcessor(data_source_id=data_source_id)
+        processor = AlbumProcessor()
         success = await processor.process_id(album_id, page_id=page_id)
 
         if not success:
@@ -233,10 +231,8 @@ async def webhook_audio(
                 status="warning", message="album_id and audio_id must be numeric values"
             )
 
-        # 获取页面和数据库信息
+        # 获取页面信息
         page_id = request.data["id"]
-        data_source_id = request.data["parent"]["data_source_id"]
-        logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
 
         # 处理URL
         processor = AudioProcessor()
@@ -308,10 +304,9 @@ async def webhook_audio_update(
                 status="warning", message="album_id and audio_id must be numeric values"
             )
 
-        # 获取页面和数据库信息
+        # 获取页面信息
         page_id = request.data["id"]
-        data_source_id = request.data["parent"]["data_source_id"]
-        logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
+
 
         # 处理需要更新的数据
         update_selection: list = request.data["properties"][
