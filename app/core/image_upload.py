@@ -243,4 +243,3 @@ async def upload_cover(url: str, upload_name: str) -> str:
         image_url=url.split("?")[0], image_name=upload_name
     ) as uploader:
         return await uploader.image_upload()
-

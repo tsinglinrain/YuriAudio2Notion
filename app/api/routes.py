@@ -307,7 +307,6 @@ async def webhook_audio_update(
         # 获取页面信息
         page_id = request.data["id"]
 
-
         # 处理需要更新的数据
         update_selection: list = request.data["properties"][
             AudioField.UPDATE_AUDIO_SELECTION

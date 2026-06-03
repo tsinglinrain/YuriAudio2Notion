@@ -18,9 +18,7 @@ logger = setup_logger(__name__)
 class NotionClient:
     """Notion API异步客户端"""
 
-    def __init__(
-        self, token: Optional[str] = None
-    ):
+    def __init__(self, token: Optional[str] = None):
         """
         初始化Notion客户端
 
