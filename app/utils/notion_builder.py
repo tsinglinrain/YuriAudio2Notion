@@ -7,7 +7,7 @@ Notion 页面属性构建器
 将业务数据映射为 Notion API 所需的 properties 字典。
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Sequence
 
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.notion_property import NotionProp as P
@@ -20,7 +20,7 @@ def build_album_properties(
 ) -> Dict[str, Any]:
     F = AlbumField
 
-    props = {
+    props: Dict[str, Any] = {
         F.NAME: P.title(data.get("name", "")),
         F.DESCRIPTION_MAIN: P.rich_text(data.get("description", "")),
         F.DESCRIPTION_SEQUEL: P.rich_text(data.get("description_sequel", "")),
@@ -46,10 +46,10 @@ def build_album_properties(
     # file_upload: 有 ID 才写，上传失败/跳过时不覆盖 Notion 已有值
     if data.get("cover"):
         props[F.COVER] = P.file_upload(data["cover"])
-    if data.get("cover_horizontal"):
-        props[F.COVER_HORIZONTAL] = P.file_upload(data["cover_horizontal"])
-    if data.get("cover_square"):
-        props[F.COVER_SQUARE] = P.file_upload(data["cover_square"])
+    if data.get("horizontal"):
+        props[F.COVER_HORIZONTAL] = P.file_upload(data["horizontal"])
+    if data.get("square"):
+        props[F.COVER_SQUARE] = P.file_upload(data["square"])
 
     return props
 
@@ -61,7 +61,7 @@ def build_audio_properties(
 ) -> Dict[str, Any]:
     F = AudioField
 
-    props = {
+    props: Dict[str, Any] = {
         F.NAME: P.title(data.get("name", "")),
         F.PUBLISH_DATE: P.date(data.get("publish_date", ""), time_zone),
         F.DESCRIPTION: P.rich_text(data.get("description", "")),
@@ -81,6 +81,6 @@ def build_audio_properties(
     return props
 
 
-def subset(all_props: Dict[str, Any], fields: list[str]) -> Dict[str, Any]:
+def subset(all_props: Dict[str, Any], fields: Sequence[str]) -> Dict[str, Any]:
     """从完整属性中挑出 fields 指定的子集，未覆盖的字段静默跳过。"""
     return {k: v for k, v in all_props.items() if k in fields}

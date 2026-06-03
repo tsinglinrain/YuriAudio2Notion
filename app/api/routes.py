@@ -11,7 +11,7 @@ import time
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 from typing import Any, AsyncGenerator
-from fastapi import APIRouter, Header, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from urllib.parse import urlparse, parse_qs
@@ -27,6 +27,7 @@ logger = setup_logger(__name__)
 
 # 创建路由器
 router = APIRouter()
+
 
 def _detect_version() -> str:
     """从 metadata 或 pyproject.toml 获取版本号"""

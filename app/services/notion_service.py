@@ -36,15 +36,13 @@ class NotionService:
         """
         self.client = NotionClient(data_source_id=data_source_id)
 
-    async def upload_album_data(
-        self, album_data: Dict[str, Any], page_id: Optional[str] = None
-    ) -> bool:
+    async def upload_album_data(self, album_data: Dict[str, Any], page_id: str) -> bool:
         """
         将专辑数据上传到Notion（异步）
 
         Args:
             album_data: 专辑数据
-            page_id: 页面ID，如果提供则更新，否则创建
+            page_id: 页面ID
 
         Returns:
             是否成功
@@ -109,15 +107,13 @@ class NotionService:
             logger.error(f"Failed to update partial data: {str(e)}")
             return False
 
-    async def upload_audio_data(
-        self, audio_data: Dict[str, Any], page_id: Optional[str] = None
-    ) -> bool:
+    async def upload_audio_data(self, audio_data: Dict[str, Any], page_id: str) -> bool:
         """
         将Audio数据上传到Notion（异步）
 
         Args:
             audio_data: Audio数据
-            page_id: 页面ID，如果提供则更新，否则创建
+            page_id: 页面ID
 
         Returns:
             是否成功
@@ -160,9 +156,7 @@ class NotionService:
         """
         try:
             # 准备部分更新数据
-            processed_data = await self._prepare_audio_data(
-                audio_data, update_fields
-            )
+            processed_data = await self._prepare_audio_data(audio_data, update_fields)
 
             # 构建部分属性
             all_props = build_audio_properties(**processed_data)
@@ -214,8 +208,8 @@ class NotionService:
         covers: Dict[str, str] = {}
         cover_defs = [
             (F.COVER, "cover", name),
-            (F.COVER_HORIZONTAL, "cover_horizontal", f"{name}_horizontal"),
-            (F.COVER_SQUARE, "cover_square", f"{name}_square"),
+            (F.COVER_HORIZONTAL, "horizontal", f"{name}_horizontal"),
+            (F.COVER_SQUARE, "square", f"{name}_square"),
         ]
         for field, data_key, upload_name in cover_defs:
             if wanted is not None and field not in wanted:
@@ -259,9 +253,7 @@ class NotionService:
             "tags": DescriptionParser.format_to_list(parser.tags),
             "main_cv": FanjiaoService.format_list_data("name", main_cv_ori),
             "main_cv_role": FanjiaoService.format_list_data("role_name", main_cv_ori),
-            "supporting_cv": FanjiaoService.format_list_data(
-                "name", supporting_cv_ori
-            ),
+            "supporting_cv": FanjiaoService.format_list_data("name", supporting_cv_ori),
             "supporting_cv_role": FanjiaoService.format_list_data(
                 "role_name", supporting_cv_ori
             ),
@@ -295,9 +287,7 @@ class NotionService:
         # Cover 上传（square 为空时 fallback 到 cover）
         cover_id = None
         if update_fields is None or F.COVER in update_fields:
-            cover_url = audio_data.get("cover_square", "") or audio_data.get(
-                "cover", ""
-            )
+            cover_url = audio_data.get("square", "") or audio_data.get("cover", "")
             if cover_url:
                 cover_url = cover_url.split("?")[0]
                 async with CoverUploader(

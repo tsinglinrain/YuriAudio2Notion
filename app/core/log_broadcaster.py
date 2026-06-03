@@ -52,9 +52,7 @@ class LogBroadcaster:
         queue: asyncio.Queue[LogEntry] = asyncio.Queue(maxsize=100)
         async with self._lock:
             if len(self._subscribers) >= self.max_subscribers:
-                raise RuntimeError(
-                    f"Max subscribers ({self.max_subscribers}) reached"
-                )
+                raise RuntimeError(f"Max subscribers ({self.max_subscribers}) reached")
             self._subscribers.append(queue)
         return queue
 

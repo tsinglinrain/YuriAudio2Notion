@@ -87,20 +87,23 @@ class FanjiaoService:
             提取后的数据
         """
         data = raw_data.get("data", {})
-        return {
-            "name": data.get("name", ""),
-            "description": data.get("description", ""),
-            "cover": data.get("cover", ""),
-            "cover_horizontal": data.get("horizontal", ""),
-            "cover_square": data.get("square", ""),
-            "publish_date": data.get("publish_date", ""),
-            "liked": data.get("liked", 0),
-            "play": data.get("play", 0),
-            "update_frequency": data.get("update_frequency", ""),
-            "ori_price": data.get("ori_price", 0),
-            "author_name": data.get("author_name", ""),
-            "up_name": data.get("up_name", ""),
-        }
+
+        _FIELDS = (
+            "name",
+            "description",
+            "cover",
+            "horizontal",
+            "square",
+            "publish_date",
+            "update_frequency",
+            "author_name",
+            "up_name",
+            "liked",
+            "play",
+            "ori_price",
+        )
+
+        return {k: data.get(k, "") for k in _FIELDS}
 
     @staticmethod
     def _extract_cv_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
