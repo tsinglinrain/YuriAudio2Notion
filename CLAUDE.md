@@ -20,9 +20,6 @@ python app/main.py
 # Run the webhook server (production)
 uvicorn app.main:app --host 0.0.0.0 --port 5050
 
-# Run CLI batch processing (reads URLs from waiting_up_private.txt)
-python cli.py
-
 # Lint
 uv run ruff check .
 uv run ruff format .
