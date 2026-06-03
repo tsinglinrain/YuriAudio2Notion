@@ -132,6 +132,30 @@ async def logs_stream() -> StreamingResponse:
     )
 
 
+def _parse_audio_ids(
+    request: WebhookDataSourceRequest,
+) -> tuple[str, str, str] | WebhookResponse:
+    url = request.data["properties"][AudioField.AUDIO_URL]["url"]
+    if not url:
+        return WebhookResponse(status="warning", message="URL is empty in request")
+
+    params = parse_qs(urlparse(url).query)
+    album_id: str = params.get("album_id", [""])[0]
+    audio_id: str = params.get("audio_id", [""])[0]
+
+    if not album_id or not audio_id:
+        return WebhookResponse(
+            status="warning", message="Album ID or Audio ID is empty in URL"
+        )
+    if not album_id.isdigit() or not audio_id.isdigit():
+        return WebhookResponse(
+            status="warning", message="album_id and audio_id must be numeric values"
+        )
+
+    page_id: str = request.data["id"]
+    return album_id, audio_id, page_id
+
+
 @router.post("/webhook-album", dependencies=[Depends(verify_api_key)])
 async def webhook_album(request: WebhookDataSourceRequest) -> WebhookResponse:
     """
@@ -195,46 +219,11 @@ async def webhook_audio(
     logger.info("Received Notion webhook-audio request")
 
     try:
-        # 从请求中提取url
-        url = request.data["properties"][AudioField.AUDIO_URL]["url"]
-        logger.info(f"Extracted URL: {url}")
+        result = _parse_audio_ids(request)
+        if isinstance(result, WebhookResponse):
+            return result
+        album_id, audio_id, page_id = result
 
-        if not url:
-            logger.warning("URL is empty")
-            return WebhookResponse(status="warning", message="URL is empty in request")
-
-        # 获取album id和audio id
-        parsed = urlparse(url)
-        params = parse_qs(parsed.query)
-
-        # 提取并验证 album_id
-        album_id_list = params.get("album_id", [])
-        album_id: str = album_id_list[0] if album_id_list else ""
-
-        # 提取并验证 audio_id
-        audio_id_list = params.get("audio_id", [])
-        audio_id: str = audio_id_list[0] if audio_id_list else ""
-        logger.info(f"Album ID: {album_id}, Audio ID: {audio_id}")
-
-        if not album_id or not audio_id:
-            logger.warning("Album ID or Audio ID is empty")
-            return WebhookResponse(
-                status="warning", message="Album ID or Audio ID is empty in URL"
-            )
-
-        # 验证参数是否为有效数字
-        if not album_id.isdigit() or not audio_id.isdigit():
-            logger.warning(
-                f"Invalid ID format: album_id={album_id}, audio_id={audio_id}"
-            )
-            return WebhookResponse(
-                status="warning", message="album_id and audio_id must be numeric values"
-            )
-
-        # 获取页面信息
-        page_id = request.data["id"]
-
-        # 处理URL
         processor = AudioProcessor()
         success = await processor.process_audio(album_id, audio_id, page_id)
 
@@ -268,44 +257,10 @@ async def webhook_audio_update(
     logger.info("Received Notion webhook-audio-update request")
 
     try:
-        # 从请求中提取url
-        url = request.data["properties"][AudioField.AUDIO_URL]["url"]
-        logger.info(f"Extracted URL: {url}")
-
-        if not url:
-            logger.warning("URL is empty")
-            return WebhookResponse(status="warning", message="URL is empty in request")
-
-        # 获取album id和audio id
-        parsed = urlparse(url)
-        params = parse_qs(parsed.query)
-
-        # 提取并验证 album_id
-        album_id_list = params.get("album_id", [])
-        album_id: str = album_id_list[0] if album_id_list else ""
-
-        # 提取并验证 audio_id
-        audio_id_list = params.get("audio_id", [])
-        audio_id: str = audio_id_list[0] if audio_id_list else ""
-        logger.info(f"Album ID: {album_id}, Audio ID: {audio_id}")
-
-        if not album_id or not audio_id:
-            logger.warning("Album ID or Audio ID is empty")
-            return WebhookResponse(
-                status="warning", message="Album ID or Audio ID is empty in URL"
-            )
-
-        # 验证参数是否为有效数字
-        if not album_id.isdigit() or not audio_id.isdigit():
-            logger.warning(
-                f"Invalid ID format: album_id={album_id}, audio_id={audio_id}"
-            )
-            return WebhookResponse(
-                status="warning", message="album_id and audio_id must be numeric values"
-            )
-
-        # 获取页面信息
-        page_id = request.data["id"]
+        result = _parse_audio_ids(request)
+        if isinstance(result, WebhookResponse):
+            return result
+        album_id, audio_id, page_id = result
 
         # 处理需要更新的数据
         update_selection: list = request.data["properties"][
