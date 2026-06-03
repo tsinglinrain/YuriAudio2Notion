@@ -30,8 +30,8 @@ class NotionProp:
         return {"select": {"name": name}} if name else {"select": None}
 
     @staticmethod
-    def multi_select(items: list) -> Dict[str, Any]:
-        return {"multi_select": items}
+    def multi_select(items: list[str]) -> Dict[str, Any]:
+        return {"multi_select": [{"name": item} for item in items]}
 
     @staticmethod
     def date(start: str, time_zone: str) -> Dict[str, Any]:

@@ -7,18 +7,10 @@ Notion 页面属性构建器
 将业务数据映射为 Notion API 所需的 properties 字典。
 """
 
-from typing import Dict, Any, List, Sequence
+from typing import Dict, Any, Sequence
 
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.notion_property import NotionProp as P
-
-
-def format_to_list(items: List[str]) -> List[Dict[str, str]]:
-    return [{"name": item} for item in items]
-
-
-def format_list_data(key: str, data: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-    return [{"name": item.get(key, "")} for item in data]
 
 
 def build_album_properties(
@@ -48,7 +40,7 @@ def build_album_properties(
         F.SUPPORTING_CV: P.multi_select(data.get("supporting_cv", [])),
         F.SUPPORTING_CV_ROLE: P.multi_select(data.get("supporting_cv_role", [])),
         F.ALBUM_LINK: P.url(data.get("album_link", "")),
-        F.PLATFORM: P.multi_select([{"name": platform}]),
+        F.PLATFORM: P.multi_select([platform]),
     }
 
     # file_upload: 有 ID 才写，上传失败/跳过时不覆盖 Notion 已有值
@@ -80,7 +72,7 @@ def build_audio_properties(
         F.ARRANGER: P.multi_select(data.get("arranger", [])),
         F.MIXER: P.multi_select(data.get("mixer", [])),
         F.LYRICS: P.rich_text(data.get("lyrics", "")),
-        F.PLATFORM: P.multi_select([{"name": platform}]),
+        F.PLATFORM: P.multi_select([platform]),
     }
 
     if data.get("cover"):
