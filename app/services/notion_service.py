@@ -14,12 +14,13 @@ from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.notion_builder import (
     build_album_properties,
     build_audio_properties,
+    format_list_data,
+    format_to_list,
     subset,
 )
 from app.core.description_parser import DescriptionParser
 from app.core.description_audio_parser import DescriptionAudioParser
 from app.core.image_upload import upload_cover
-from app.services.fanjiao_service import FanjiaoService
 from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -245,16 +246,12 @@ class NotionService:
             "up_name": album_data.get("up_name", ""),
             "source": "改编" if "原著" in parser.additional_info else "原创",
             "commercial_drama": "商剧" if ori_price > 0 else "非商",
-            "update_frequency": DescriptionParser.format_to_list(
-                album_data.get("update_frequency", [])
-            ),
-            "tags": DescriptionParser.format_to_list(parser.tags),
-            "main_cv": FanjiaoService.format_list_data("name", main_cv_ori),
-            "main_cv_role": FanjiaoService.format_list_data("role_name", main_cv_ori),
-            "supporting_cv": FanjiaoService.format_list_data("name", supporting_cv_ori),
-            "supporting_cv_role": FanjiaoService.format_list_data(
-                "role_name", supporting_cv_ori
-            ),
+            "update_frequency": format_to_list(album_data.get("update_frequency", [])),
+            "tags": format_to_list(parser.tags),
+            "main_cv": format_list_data("name", main_cv_ori),
+            "main_cv_role": format_list_data("role_name", main_cv_ori),
+            "supporting_cv": format_list_data("name", supporting_cv_ori),
+            "supporting_cv_role": format_list_data("role_name", supporting_cv_ori),
             "album_link": album_data.get("album_url", ""),
         }
 
@@ -301,11 +298,11 @@ class NotionService:
             "description": description,
             "publish_date": audio_data.get("publish_date", "").replace("+08:00", "Z"),
             "play": audio_data.get("play", 0),
-            "singer": DescriptionAudioParser.format_to_list(credits.singer),
-            "lyricist": DescriptionAudioParser.format_to_list(credits.lyricist),
-            "composer": DescriptionAudioParser.format_to_list(credits.composer),
-            "arranger": DescriptionAudioParser.format_to_list(credits.arranger),
-            "mixer": DescriptionAudioParser.format_to_list(credits.mixer),
+            "singer": format_to_list(credits.singer),
+            "lyricist": format_to_list(credits.lyricist),
+            "composer": format_to_list(credits.composer),
+            "arranger": format_to_list(credits.arranger),
+            "mixer": format_to_list(credits.mixer),
             "lyrics": credits.lyrics,
         }
 

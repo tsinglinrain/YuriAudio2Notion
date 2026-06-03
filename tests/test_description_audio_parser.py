@@ -10,6 +10,7 @@ DescriptionAudioParser 单元测试
 
 import pytest
 from app.core.description_audio_parser import DescriptionAudioParser
+from app.utils.notion_builder import format_to_list
 
 
 # ---------------------------------------------------------------------------
@@ -362,11 +363,11 @@ class TestEdgeCases:
 
 class TestFormatToList:
     def test_empty_list(self):
-        assert DescriptionAudioParser.format_to_list([]) == []
+        assert format_to_list([]) == []
 
     def test_single_item(self):
-        assert DescriptionAudioParser.format_to_list(["水原"]) == [{"name": "水原"}]
+        assert format_to_list(["水原"]) == [{"name": "水原"}]
 
     def test_multiple_items(self):
-        result = DescriptionAudioParser.format_to_list(["纸巾", "水原"])
+        result = format_to_list(["纸巾", "水原"])
         assert result == [{"name": "纸巾"}, {"name": "水原"}]

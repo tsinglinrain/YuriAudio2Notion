@@ -7,10 +7,18 @@ Notion 页面属性构建器
 将业务数据映射为 Notion API 所需的 properties 字典。
 """
 
-from typing import Dict, Any, Sequence
+from typing import Dict, Any, List, Sequence
 
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.notion_property import NotionProp as P
+
+
+def format_to_list(items: List[str]) -> List[Dict[str, str]]:
+    return [{"name": item} for item in items]
+
+
+def format_list_data(key: str, data: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    return [{"name": item.get(key, "")} for item in data]
 
 
 def build_album_properties(

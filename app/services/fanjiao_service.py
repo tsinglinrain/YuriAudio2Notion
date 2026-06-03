@@ -159,17 +159,3 @@ class FanjiaoService:
             return [f"每周{day}更新" for day in week_matches]
 
         return [update_frequency]
-
-    @staticmethod
-    def format_list_data(key: str, data: List[Dict]) -> List[Dict[str, str]]:
-        """
-        从字典列表中提取指定键的值，格式化为Notion格式
-
-        Args:
-            key: 要提取的键名
-            data: 原始数据列表
-
-        Returns:
-            格式化后的列表
-        """
-        return [{"name": item.get(key, "")} for item in data]

@@ -111,16 +111,3 @@ class DescriptionAudioParser:
         # 半角逗号主要用于兼容非中文格式数据，中文姓名本身不含逗号
         parts = re.split(r"[、，,]", cleaned)
         return [p.strip() for p in parts if p.strip()]
-
-    @staticmethod
-    def format_to_list(items: List[str]) -> List[dict]:
-        """
-        将字符串列表转换为Notion格式
-
-        Args:
-            items: 字符串列表
-
-        Returns:
-            格式化后的列表 [{"name": "item1"}, {"name": "item2"}]
-        """
-        return [{"name": item} for item in items]

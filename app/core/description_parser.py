@@ -191,16 +191,3 @@ class DescriptionParser:
                 return 0  # 遇到无法识别的字符返回0
 
         return total if total != 0 else 0
-
-    @staticmethod
-    def format_to_list(items: List[str]) -> List[dict]:
-        """
-        将字符串列表转换为Notion格式
-
-        Args:
-            items: 字符串列表
-
-        Returns:
-            格式化后的列表 [{"name": "item1"}, {"name": "item2"}]
-        """
-        return [{"name": item} for item in items]
