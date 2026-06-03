@@ -6,8 +6,6 @@
 协调各个服务完成完整的处理流程（异步版本）
 """
 
-from typing import Optional
-
 from app.constants.notion_fields import AlbumField, AudioField
 from app.services.fanjiao_service import FanjiaoService
 from app.services.fanjiao_audio_service import FanjiaoAudioService
@@ -23,23 +21,6 @@ class AlbumProcessor:
     def __init__(self):
         self.fanjiao_service = FanjiaoService()
         self.notion_service = NotionService()
-
-    async def process_url(self, url: str, page_id: str) -> bool:
-        """
-        处理单个专辑URL（异步）
-
-        Args:
-            url: 专辑URL
-            page_id: 页面ID
-
-        Returns:
-            是否处理成功
-        """
-        logger.info(f"Processing URL: {url}")
-
-        # 获取数据
-        album_id = url.split("album_id=")[-1]
-        return await self.process_id(album_id, page_id)
 
     async def process_id(self, album_id: str, page_id: str) -> bool:
         """
