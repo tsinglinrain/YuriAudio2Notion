@@ -6,7 +6,7 @@ Notion数据上传服务
 负责将处理好的数据上传到Notion（异步版本）
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 from app.clients.notion import NotionClient
 from app.constants.notion_fields import AlbumField, AudioField
@@ -27,14 +27,8 @@ logger = setup_logger(__name__)
 class NotionService:
     """Notion数据服务"""
 
-    def __init__(self, data_source_id: Optional[str] = None):
-        """
-        初始化服务
-
-        Args:
-            data_source_id: Notion数据库ID，默认使用配置中的值
-        """
-        self.client = NotionClient(data_source_id=data_source_id)
+    def __init__(self):
+        self.client = NotionClient()
 
     async def upload_album_data(self, album_data: Dict[str, Any], page_id: str) -> bool:
         """

@@ -103,7 +103,7 @@ class FanjiaoService:
             "ori_price",
         )
 
-        return {k: data.get(k, "") for k in _FIELDS}
+        return {k: data[k] for k in _FIELDS if k in data}
 
     @staticmethod
     def _extract_cv_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:

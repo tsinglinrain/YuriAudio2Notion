@@ -66,7 +66,7 @@ class FanjiaoAudioService:
         data = audios[0]
         logger.info(f"Extracted audio data for audio_id {audio_id}: {data.get('name')}")
 
-        _STR_FIELDS = (
+        _FIELDS = (
             "name",
             "publish_date",
             "description",
@@ -76,5 +76,4 @@ class FanjiaoAudioService:
             "play",
         )
 
-        result = {k: data.get(k, "") for k in _STR_FIELDS}
-        return result
+        return {k: data[k] for k in _FIELDS if k in data}
