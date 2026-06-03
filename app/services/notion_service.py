@@ -6,6 +6,7 @@ Notion数据上传服务
 负责将处理好的数据上传到Notion（异步版本）
 """
 
+import asyncio
 from typing import Dict, Any
 
 from app.clients.notion import NotionClient
@@ -17,7 +18,7 @@ from app.utils.notion_builder import (
 )
 from app.core.description_parser import DescriptionParser
 from app.core.description_audio_parser import DescriptionAudioParser
-from app.core.image_upload import CoverUploader
+from app.core.image_upload import upload_cover
 from app.services.fanjiao_service import FanjiaoService
 from app.utils.logger import setup_logger
 
@@ -197,28 +198,31 @@ class NotionService:
         description = album_data.get("description", "")
         ori_price = album_data.get("ori_price", 0)
 
-        # Cover 上传（仅上传 update_fields 中包含的 cover 字段）
+        # Cover 并发上传（仅上传 update_fields 中包含的 cover 字段）
         wanted = set(update_fields) if update_fields is not None else None
-        covers: Dict[str, str] = {}
         cover_defs = [
             (F.COVER, "cover", name),
             (F.COVER_HORIZONTAL, "horizontal", f"{name}_horizontal"),
             (F.COVER_SQUARE, "square", f"{name}_square"),
         ]
+        keys: list[str] = []
+        coros = []
         for field, data_key, upload_name in cover_defs:
             if wanted is not None and field not in wanted:
                 continue
-            url = album_data.get(data_key, "")
+            url = album_data.get(data_key)
             if url:
-                url = url.split("?")[0]
-                async with CoverUploader(
-                    image_url=url, image_name=upload_name
-                ) as uploader:
-                    covers[data_key] = await uploader.image_upload()
+                keys.append(data_key)
+                coros.append(upload_cover(url, upload_name))
             elif field == F.COVER:
                 logger.warning(
                     f"Cover URL is empty for album: {name}, skipping cover upload"
                 )
+
+        covers: Dict[str, str] = {}
+        if coros:
+            results = await asyncio.gather(*coros)
+            covers = dict(zip(keys, results))
 
         # 解析描述
         parser = DescriptionParser(description)
@@ -281,13 +285,9 @@ class NotionService:
         # Cover 上传（square 为空时 fallback 到 cover）
         cover_id = None
         if update_fields is None or F.COVER in update_fields:
-            cover_url = audio_data.get("square", "") or audio_data.get("cover", "")
+            cover_url = audio_data.get("square") or audio_data.get("cover")
             if cover_url:
-                cover_url = cover_url.split("?")[0]
-                async with CoverUploader(
-                    image_url=cover_url, image_name=name
-                ) as uploader:
-                    cover_id = await uploader.image_upload()
+                cover_id = await upload_cover(cover_url, name)
             else:
                 logger.warning(
                     f"Cover URL is empty for audio: {name}, skipping cover upload"

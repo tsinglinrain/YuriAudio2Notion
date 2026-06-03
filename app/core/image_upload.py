@@ -236,3 +236,11 @@ class CoverUploader:
         await cover_cache.set(self.image_url, file_upload_id)
 
         return file_upload_id
+
+
+async def upload_cover(url: str, upload_name: str) -> str:
+    async with CoverUploader(
+        image_url=url.split("?")[0], image_name=upload_name
+    ) as uploader:
+        return await uploader.image_upload()
+
