@@ -15,6 +15,21 @@ from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
+_ALBUM_FIELDS = (
+    "name",
+    "description",
+    "cover",
+    "horizontal",
+    "square",
+    "publish_date",
+    "update_frequency",
+    "author_name",
+    "up_name",
+    "liked",
+    "play",
+    "ori_price",
+)
+
 
 class FanjiaoService:
     """Fanjiao数据服务"""
@@ -87,23 +102,7 @@ class FanjiaoService:
             提取后的数据
         """
         data = raw_data.get("data", {})
-
-        _FIELDS = (
-            "name",
-            "description",
-            "cover",
-            "horizontal",
-            "square",
-            "publish_date",
-            "update_frequency",
-            "author_name",
-            "up_name",
-            "liked",
-            "play",
-            "ori_price",
-        )
-
-        return {k: data[k] for k in _FIELDS if k in data}
+        return {k: data[k] for k in _ALBUM_FIELDS if k in data}
 
     @staticmethod
     def _extract_cv_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:

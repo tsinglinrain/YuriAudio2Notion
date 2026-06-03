@@ -13,6 +13,16 @@ from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
+_AUDIO_FIELDS = (
+    "name",
+    "publish_date",
+    "description",
+    "cover",
+    "square",
+    "subtitle",
+    "play",
+)
+
 
 class FanjiaoAudioService:
     """Fanjiao Audio数据服务"""
@@ -66,14 +76,4 @@ class FanjiaoAudioService:
         data = audios[0]
         logger.info(f"Extracted audio data for audio_id {audio_id}: {data.get('name')}")
 
-        _FIELDS = (
-            "name",
-            "publish_date",
-            "description",
-            "cover",
-            "square",
-            "subtitle",
-            "play",
-        )
-
-        return {k: data[k] for k in _FIELDS if k in data}
+        return {k: data[k] for k in _AUDIO_FIELDS if k in data}
