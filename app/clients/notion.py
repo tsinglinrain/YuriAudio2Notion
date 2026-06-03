@@ -19,16 +19,14 @@ class NotionClient:
     """Notion API异步客户端"""
 
     def __init__(
-        self, data_source_id: Optional[str] = None, token: Optional[str] = None
+        self, token: Optional[str] = None
     ):
         """
         初始化Notion客户端
 
         Args:
-            data_source_id: Notion数据库ID，默认使用配置中的值
             token: Notion API Token，默认使用配置中的值
         """
-        self.data_source_id = data_source_id or config.NOTION_DATA_SOURCE_ID
         self.token = token or config.NOTION_TOKEN
         self.client = AsyncClient(auth=self.token)
 

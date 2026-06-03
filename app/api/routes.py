@@ -133,13 +133,13 @@ async def logs_stream() -> StreamingResponse:
 
 
 @router.post("/webhook-album", dependencies=[Depends(verify_api_key)])
-async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookResponse:
+async def webhook_album(request: WebhookDataSourceRequest) -> WebhookResponse:
     """
     处理来自Notion数据库的webhook请求
     适用于在某个data source中专门设置一个空白page，在里面填写album id，
     随后会在指定data source生成该链接对应的page
     """
-    logger.info("Received Notion webhook-albume request")
+    logger.info("Received Notion webhook-album request")
 
     try:
         # 从Notion数据中提取album id
@@ -185,7 +185,7 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
 
 
 @router.post("/webhook-audio", dependencies=[Depends(verify_api_key)])
-async def webhook_song(
+async def webhook_audio(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """
@@ -261,7 +261,7 @@ async def webhook_song(
 
 
 @router.post("/webhook-audio-update", dependencies=[Depends(verify_api_key)])
-async def webhook_song_update(
+async def webhook_audio_update(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """
@@ -354,7 +354,7 @@ async def webhook_song_update(
 
 
 @router.post("/webhook-album-update", dependencies=[Depends(verify_api_key)])
-async def webhook_data_source_update(
+async def webhook_album_update(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """
@@ -419,7 +419,7 @@ async def webhook_data_source_update(
 
 
 @router.post("/webhook-debug", dependencies=[Depends(verify_api_key)])
-async def webhook_data_source_debug(
+async def webhook_debug(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """
