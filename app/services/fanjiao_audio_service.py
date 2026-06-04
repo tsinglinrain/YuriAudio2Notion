@@ -44,9 +44,7 @@ class FanjiaoAudioService:
             处理后的Audio数据，失败返回None
         """
         try:
-            audio_raw = await self.audio_client.fetch_audio(
-                album_id=album_id, audio_id=audio_id
-            )
+            audio_raw = await self.audio_client.fetch_audio(album_id=album_id)
             return self._extract_audio_data(audio_raw, audio_id)
         except Exception as e:
             logger.error(
@@ -73,7 +71,13 @@ class FanjiaoAudioService:
             logger.error(f"No audio data found in response for audio_id: {audio_id}")
             return None
 
-        data = audios[0]
-        logger.info(f"Extracted audio data for audio_id {audio_id}: {data.get('name')}")
+        audio_id_int = int(audio_id)
+        for audio in audios:
+            if audio.get("audio_id") == audio_id_int:
+                logger.info(
+                    f"Extracted audio data for audio_id {audio_id}: {audio.get('name')}"
+                )
+                return {k: audio[k] for k in _AUDIO_FIELDS if k in audio}
 
-        return {k: data[k] for k in _AUDIO_FIELDS if k in data}
+        logger.error(f"Audio ID {audio_id} not found in album data")
+        return None

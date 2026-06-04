@@ -157,16 +157,15 @@ class FanjiaoCVClient(BaseFanjiaoClient):
 class FanjiaoAudioClient(BaseFanjiaoClient):
     """音频数据API客户端"""
 
-    async def fetch_audio(self, album_id: str, audio_id: str) -> Dict[str, Any]:
+    async def fetch_audio(self, album_id: str) -> Dict[str, Any]:
         """
         获取音频数据（异步）
 
         Args:
             album_id: 专辑ID
-            audio_id: 音频ID
 
         Returns:
-            音频数据
+            音频数据（包含该专辑下所有 audio 的 audios_list）
         """
-        query = f"album_id={album_id}&audio_id={audio_id}"
+        query = f"album_id={album_id}"
         return await self._fetch(config.FANJIAO_AUDIO_BASE_URL, query)
