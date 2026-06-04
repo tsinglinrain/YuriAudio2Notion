@@ -8,7 +8,7 @@ DescriptionAudioParser 单元测试
 覆盖各类职责格式、歌词分割标记及边界情况。
 """
 
-from app.core.description_audio_parser import DescriptionAudioParser
+from app.services.description_audio_parser import DescriptionAudioParser
 
 
 # ---------------------------------------------------------------------------

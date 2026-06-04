@@ -16,8 +16,10 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from urllib.parse import urlparse, parse_qs
 
-from app.core.processor import AlbumProcessor, AudioProcessor
-from app.core.log_broadcaster import get_broadcaster
+from app.services.fanjiao_album_service import FanjiaoService
+from app.services.fanjiao_audio_service import FanjiaoAudioService
+from app.services.notion_service import NotionService
+from app.utils.log_broadcaster import get_broadcaster
 from app.api.middlewares import verify_api_key
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.logger import setup_logger
@@ -180,10 +182,13 @@ async def webhook_album(request: WebhookDataSourceRequest) -> WebhookResponse:
         # 获取页面信息
         page_id = request.data["id"]
 
-        # 处理URL
-        processor = AlbumProcessor()
-        success = await processor.process_id(album_id, page_id=page_id)
+        fanjiao = FanjiaoService()
+        album_data = await fanjiao.fetch_album_data(album_id)
+        if not album_data:
+            raise HTTPException(status_code=500, detail="Failed to fetch album data")
 
+        notion = NotionService()
+        success = await notion.upload_album_data(album_data, page_id)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to process album data")
 
@@ -224,9 +229,13 @@ async def webhook_audio(
             return result
         album_id, audio_id, page_id = result
 
-        processor = AudioProcessor()
-        success = await processor.process_audio(album_id, audio_id, page_id)
+        fanjiao = FanjiaoAudioService()
+        audio_data = await fanjiao.fetch_audio_data(album_id, audio_id)
+        if not audio_data:
+            raise HTTPException(status_code=500, detail="Failed to fetch audio data")
 
+        notion = NotionService()
+        success = await notion.upload_audio_data(audio_data, page_id)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to process audio data")
 
@@ -274,12 +283,15 @@ async def webhook_audio_update(
         update_fields = [AudioField(item["name"]) for item in update_selection]
         logger.info(f"Fields to update: {update_fields}")
 
-        # 进行更新处理
-        processor = AudioProcessor()
-        success = await processor.update_process_audio(
-            album_id, audio_id, page_id, update_fields
-        )
+        fanjiao = FanjiaoAudioService()
+        audio_data = await fanjiao.fetch_audio_data(album_id, audio_id)
+        if not audio_data:
+            raise HTTPException(status_code=500, detail="Failed to fetch audio data")
 
+        notion = NotionService()
+        success = await notion.update_partial_audio_data(
+            audio_data, page_id, update_fields
+        )
         if not success:
             raise HTTPException(status_code=500, detail="Failed to update audio data")
 
@@ -339,12 +351,15 @@ async def webhook_album_update(
         update_fields = [AlbumField(item["name"]) for item in update_selection]
         logger.info(f"Fields to update: {update_fields}")
 
-        # 进行更新处理
-        processor = AlbumProcessor()
-        success = await processor.update_process_id(
-            album_id, page_id=page_id, update_fields=update_fields
-        )
+        fanjiao = FanjiaoService()
+        album_data = await fanjiao.fetch_album_data(album_id)
+        if not album_data:
+            raise HTTPException(status_code=500, detail="Failed to fetch album data")
 
+        notion = NotionService()
+        success = await notion.update_partial_album_data(
+            album_data, page_id, update_fields
+        )
         if not success:
             raise HTTPException(status_code=500, detail="Failed to update album data")
 

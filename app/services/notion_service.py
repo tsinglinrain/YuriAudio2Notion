@@ -16,9 +16,9 @@ from app.utils.notion_builder import (
     build_audio_properties,
     subset,
 )
-from app.core.description_parser import DescriptionParser
-from app.core.description_audio_parser import DescriptionAudioParser
-from app.core.image_upload import upload_cover
+from app.services.description_album_parser import DescriptionParser
+from app.services.description_audio_parser import DescriptionAudioParser
+from app.clients.image_upload import upload_cover
 from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
