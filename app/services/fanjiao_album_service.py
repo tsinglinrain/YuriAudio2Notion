@@ -15,6 +15,21 @@ from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
+_ALBUM_FIELDS = (
+    "name",
+    "description",
+    "cover",
+    "horizontal",
+    "square",
+    "publish_date",
+    "update_frequency",
+    "author_name",
+    "up_name",
+    "liked",
+    "play",
+    "ori_price",
+)
+
 
 class FanjiaoService:
     """Fanjiao数据服务"""
@@ -87,20 +102,7 @@ class FanjiaoService:
             提取后的数据
         """
         data = raw_data.get("data", {})
-        return {
-            "name": data.get("name", ""),
-            "description": data.get("description", ""),
-            "cover": data.get("cover", ""),
-            "cover_horizontal": data.get("horizontal", ""),
-            "cover_square": data.get("square", ""),
-            "publish_date": data.get("publish_date", ""),
-            "liked": data.get("liked", 0),
-            "play": data.get("play", 0),
-            "update_frequency": data.get("update_frequency", ""),
-            "ori_price": data.get("ori_price", 0),
-            "author_name": data.get("author_name", ""),
-            "up_name": data.get("up_name", ""),
-        }
+        return {k: data[k] for k in _ALBUM_FIELDS if k in data}
 
     @staticmethod
     def _extract_cv_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -156,17 +158,3 @@ class FanjiaoService:
             return [f"每周{day}更新" for day in week_matches]
 
         return [update_frequency]
-
-    @staticmethod
-    def format_list_data(key: str, data: List[Dict]) -> List[Dict[str, str]]:
-        """
-        从字典列表中提取指定键的值，格式化为Notion格式
-
-        Args:
-            key: 要提取的键名
-            data: 原始数据列表
-
-        Returns:
-            格式化后的列表
-        """
-        return [{"name": item.get(key, "")} for item in data]

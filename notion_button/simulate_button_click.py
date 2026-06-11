@@ -21,7 +21,7 @@ load_dotenv()
 
 # 配置
 BASE_URL = "http://localhost:5050"
-WEBHOOK_ENDPOINT = "/webhook-data-source"
+WEBHOOK_ENDPOINT = "/webhook-album"
 JSON_FILE_PATH = Path(__file__).parent / "notion_webhook_info.json"
 
 

@@ -6,7 +6,6 @@ services:
       - "5050:5050"
     environment:
       - ENV=production
-      - NOTION_DATA_SOURCE_ID=133**************
       - NOTION_TOKEN=ntn_*********
       - FANJIAO_SALT=
       - FANJIAO_BASE_URL=

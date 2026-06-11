@@ -11,13 +11,15 @@ import time
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 from typing import Any, AsyncGenerator
-from fastapi import APIRouter, Header, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from urllib.parse import urlparse, parse_qs
 
-from app.core.processor import AlbumProcessor, AudioProcessor
-from app.core.log_broadcaster import get_broadcaster
+from app.services.fanjiao_album_service import FanjiaoService
+from app.services.fanjiao_audio_service import FanjiaoAudioService
+from app.services.notion_service import NotionService
+from app.utils.log_broadcaster import get_broadcaster
 from app.api.middlewares import verify_api_key
 from app.constants.notion_fields import AlbumField, AudioField
 from app.utils.logger import setup_logger
@@ -27,6 +29,7 @@ logger = setup_logger(__name__)
 
 # 创建路由器
 router = APIRouter()
+
 
 def _detect_version() -> str:
     """从 metadata 或 pyproject.toml 获取版本号"""
@@ -131,14 +134,38 @@ async def logs_stream() -> StreamingResponse:
     )
 
 
-@router.post("/webhook-data-source", dependencies=[Depends(verify_api_key)])
-async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookResponse:
+def _parse_audio_ids(
+    request: WebhookDataSourceRequest,
+) -> tuple[str, str, str] | WebhookResponse:
+    url = request.data["properties"][AudioField.AUDIO_URL]["url"]
+    if not url:
+        return WebhookResponse(status="warning", message="URL is empty in request")
+
+    params = parse_qs(urlparse(url).query)
+    album_id: str = params.get("album_id", [""])[0]
+    audio_id: str = params.get("audio_id", [""])[0]
+
+    if not album_id or not audio_id:
+        return WebhookResponse(
+            status="warning", message="Album ID or Audio ID is empty in URL"
+        )
+    if not album_id.isdigit() or not audio_id.isdigit():
+        return WebhookResponse(
+            status="warning", message="album_id and audio_id must be numeric values"
+        )
+
+    page_id: str = request.data["id"]
+    return album_id, audio_id, page_id
+
+
+@router.post("/webhook-album", dependencies=[Depends(verify_api_key)])
+async def webhook_album(request: WebhookDataSourceRequest) -> WebhookResponse:
     """
     处理来自Notion数据库的webhook请求
-    适用于在某个data source中专门设置一个空白page，在里面填写url，
+    适用于在某个data source中专门设置一个空白page，在里面填写album id，
     随后会在指定data source生成该链接对应的page
     """
-    logger.info("Received Notion webhook-data-source request")
+    logger.info("Received Notion webhook-album request")
 
     try:
         # 从Notion数据中提取album id
@@ -152,15 +179,16 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
                 status="warning", message="Album ID is empty in Notion data"
             )
 
-        # 获取页面和数据库信息
+        # 获取页面信息
         page_id = request.data["id"]
-        data_source_id = request.data["parent"]["data_source_id"]
-        logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
 
-        # 处理URL
-        processor = AlbumProcessor(data_source_id=data_source_id)
-        success = await processor.process_id(album_id, page_id=page_id)
+        fanjiao = FanjiaoService()
+        album_data = await fanjiao.fetch_album_data(album_id)
+        if not album_data:
+            raise HTTPException(status_code=500, detail="Failed to fetch album data")
 
+        notion = NotionService()
+        success = await notion.upload_album_data(album_data, page_id)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to process album data")
 
@@ -183,74 +211,8 @@ async def webhook_data_source(request: WebhookDataSourceRequest) -> WebhookRespo
         )
 
 
-@router.post("/webhook-page", dependencies=[Depends(verify_api_key)])
-async def webhook_page(url: str | None = Header(None)) -> WebhookResponse:
-    """
-    处理来自Notion页面的webhook请求
-    期望在请求头中找到'url'键
-    适用于在某个page中设置button，在其中的请求头中填入url，
-    随后会在指定data_source生成该链接对应的page
-    """
-    logger.info("Received Notion webhook-page request")
-
-    if not url:
-        logger.error("'url' header not found in request")
-        raise HTTPException(
-            status_code=400, detail="'url' header is missing from the request headers."
-        )
-
-    logger.info(f"Found URL in headers: {url}")
-
-    try:
-        # 处理URL
-        processor = AlbumProcessor()
-        success = await processor.process_url(url)
-
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to process album data")
-
-        return WebhookResponse(
-            status="success", message="Webhook received and data processed!"
-        )
-
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        logger.error(f"Unexpected error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail=f"An unexpected error occurred: {e}"
-        )
-
-
-@router.post("/webhook-url", dependencies=[Depends(verify_api_key)])
-async def webhook_url(request: WebhookUrlRequest) -> WebhookResponse:
-    """
-    处理直接传入URL的webhook请求
-    需要在请求体中提供url参数
-    """
-    logger.info(f"Received webhook-url request for: {request.url}")
-
-    try:
-        # 处理URL
-        processor = AlbumProcessor()
-        success = await processor.process_url(request.url)
-
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to process album data")
-
-        return WebhookResponse(
-            status="success", message="Webhook received and data processed!"
-        )
-
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        logger.error(f"Processing failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/webhook-song", dependencies=[Depends(verify_api_key)])
-async def webhook_song(
+@router.post("/webhook-audio", dependencies=[Depends(verify_api_key)])
+async def webhook_audio(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """
@@ -259,54 +221,21 @@ async def webhook_song(
     适用于在某个data source中专门设置一个空白page，在里面填写url，
     随后会在指定data source生成该链接对应的page
     """
-    logger.info("Received Notion webhook-song request")
+    logger.info("Received Notion webhook-audio request")
 
     try:
-        # 从请求中提取url
-        url = request.data["properties"][AudioField.AUDIO_URL]["url"]
-        logger.info(f"Extracted URL: {url}")
+        result = _parse_audio_ids(request)
+        if isinstance(result, WebhookResponse):
+            return result
+        album_id, audio_id, page_id = result
 
-        if not url:
-            logger.warning("URL is empty")
-            return WebhookResponse(status="warning", message="URL is empty in request")
+        fanjiao = FanjiaoAudioService()
+        audio_data = await fanjiao.fetch_audio_data(album_id, audio_id)
+        if not audio_data:
+            raise HTTPException(status_code=500, detail="Failed to fetch audio data")
 
-        # 获取album id和audio id
-        parsed = urlparse(url)
-        params = parse_qs(parsed.query)
-
-        # 提取并验证 album_id
-        album_id_list = params.get("album_id", [])
-        album_id: str = album_id_list[0] if album_id_list else ""
-
-        # 提取并验证 audio_id
-        audio_id_list = params.get("audio_id", [])
-        audio_id: str = audio_id_list[0] if audio_id_list else ""
-        logger.info(f"Album ID: {album_id}, Audio ID: {audio_id}")
-
-        if not album_id or not audio_id:
-            logger.warning("Album ID or Audio ID is empty")
-            return WebhookResponse(
-                status="warning", message="Album ID or Audio ID is empty in URL"
-            )
-
-        # 验证参数是否为有效数字
-        if not album_id.isdigit() or not audio_id.isdigit():
-            logger.warning(
-                f"Invalid ID format: album_id={album_id}, audio_id={audio_id}"
-            )
-            return WebhookResponse(
-                status="warning", message="album_id and audio_id must be numeric values"
-            )
-
-        # 获取页面和数据库信息
-        page_id = request.data["id"]
-        data_source_id = request.data["parent"]["data_source_id"]
-        logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
-
-        # 处理URL
-        processor = AudioProcessor()
-        success = await processor.process_audio(album_id, audio_id, page_id)
-
+        notion = NotionService()
+        success = await notion.upload_audio_data(audio_data, page_id)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to process audio data")
 
@@ -325,8 +254,8 @@ async def webhook_song(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/webhook-song-update", dependencies=[Depends(verify_api_key)])
-async def webhook_song_update(
+@router.post("/webhook-audio-update", dependencies=[Depends(verify_api_key)])
+async def webhook_audio_update(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """
@@ -334,49 +263,13 @@ async def webhook_song_update(
     处理来自 Notion 数据库的 webhook 请求
     根据页面中选择的更新项，对对应音频的部分属性进行更新
     """
-    logger.info("Received Notion webhook-song-update request")
+    logger.info("Received Notion webhook-audio-update request")
 
     try:
-        # 从请求中提取url
-        url = request.data["properties"][AudioField.AUDIO_URL]["url"]
-        logger.info(f"Extracted URL: {url}")
-
-        if not url:
-            logger.warning("URL is empty")
-            return WebhookResponse(status="warning", message="URL is empty in request")
-
-        # 获取album id和audio id
-        parsed = urlparse(url)
-        params = parse_qs(parsed.query)
-
-        # 提取并验证 album_id
-        album_id_list = params.get("album_id", [])
-        album_id: str = album_id_list[0] if album_id_list else ""
-
-        # 提取并验证 audio_id
-        audio_id_list = params.get("audio_id", [])
-        audio_id: str = audio_id_list[0] if audio_id_list else ""
-        logger.info(f"Album ID: {album_id}, Audio ID: {audio_id}")
-
-        if not album_id or not audio_id:
-            logger.warning("Album ID or Audio ID is empty")
-            return WebhookResponse(
-                status="warning", message="Album ID or Audio ID is empty in URL"
-            )
-
-        # 验证参数是否为有效数字
-        if not album_id.isdigit() or not audio_id.isdigit():
-            logger.warning(
-                f"Invalid ID format: album_id={album_id}, audio_id={audio_id}"
-            )
-            return WebhookResponse(
-                status="warning", message="album_id and audio_id must be numeric values"
-            )
-
-        # 获取页面和数据库信息
-        page_id = request.data["id"]
-        data_source_id = request.data["parent"]["data_source_id"]
-        logger.info(f"Page ID: {page_id}, Data Source ID: {data_source_id}")
+        result = _parse_audio_ids(request)
+        if isinstance(result, WebhookResponse):
+            return result
+        album_id, audio_id, page_id = result
 
         # 处理需要更新的数据
         update_selection: list = request.data["properties"][
@@ -390,12 +283,15 @@ async def webhook_song_update(
         update_fields = [AudioField(item["name"]) for item in update_selection]
         logger.info(f"Fields to update: {update_fields}")
 
-        # 进行更新处理
-        processor = AudioProcessor()
-        success = await processor.update_process_audio(
-            album_id, audio_id, page_id, update_fields
-        )
+        fanjiao = FanjiaoAudioService()
+        audio_data = await fanjiao.fetch_audio_data(album_id, audio_id)
+        if not audio_data:
+            raise HTTPException(status_code=500, detail="Failed to fetch audio data")
 
+        notion = NotionService()
+        success = await notion.update_partial_audio_data(
+            audio_data, page_id, update_fields
+        )
         if not success:
             raise HTTPException(status_code=500, detail="Failed to update audio data")
 
@@ -418,14 +314,14 @@ async def webhook_song_update(
         )
 
 
-@router.post("/webhook-data-source-update", dependencies=[Depends(verify_api_key)])
-async def webhook_data_source_update(
+@router.post("/webhook-album-update", dependencies=[Depends(verify_api_key)])
+async def webhook_album_update(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """
     对data source中的某些property进行更新时触发的webhook端点
     """
-    logger.info("Received Notion webhook-data-source-update request")
+    logger.info("Received Notion webhook-album-update request")
 
     try:
         # 从Notion数据中提取album id
@@ -455,12 +351,15 @@ async def webhook_data_source_update(
         update_fields = [AlbumField(item["name"]) for item in update_selection]
         logger.info(f"Fields to update: {update_fields}")
 
-        # 进行更新处理
-        processor = AlbumProcessor()
-        success = await processor.update_process_id(
-            album_id, page_id=page_id, update_fields=update_fields
-        )
+        fanjiao = FanjiaoService()
+        album_data = await fanjiao.fetch_album_data(album_id)
+        if not album_data:
+            raise HTTPException(status_code=500, detail="Failed to fetch album data")
 
+        notion = NotionService()
+        success = await notion.update_partial_album_data(
+            album_data, page_id, update_fields
+        )
         if not success:
             raise HTTPException(status_code=500, detail="Failed to update album data")
 
@@ -483,8 +382,8 @@ async def webhook_data_source_update(
         )
 
 
-@router.post("/webhook-data-source-debug", dependencies=[Depends(verify_api_key)])
-async def webhook_data_source_debug(
+@router.post("/webhook-debug", dependencies=[Depends(verify_api_key)])
+async def webhook_debug(
     request: WebhookDataSourceRequest,
 ) -> WebhookResponse:
     """

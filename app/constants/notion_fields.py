@@ -34,7 +34,7 @@ class AlbumField(StrEnum):
     PUBLISH_DATE = "Publish Date"
 
     # 富文本类型 (rich_text)
-    DESCRIPTION = "简介"
+    DESCRIPTION_MAIN = "简介"
     DESCRIPTION_SEQUEL = "简介续"
 
     # 单选类型 (select)

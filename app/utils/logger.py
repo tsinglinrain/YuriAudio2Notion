@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 from typing import Optional
 
-from app.core.log_broadcaster import LogEntry, get_broadcaster
+from app.utils.log_broadcaster import LogEntry, get_broadcaster
 
 
 class BroadcastHandler(logging.Handler):

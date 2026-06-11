@@ -165,7 +165,7 @@ class FanjiaoAudioClient(BaseFanjiaoClient):
             album_id: 专辑ID
 
         Returns:
-            音频数据
+            音频数据（包含该专辑下所有 audio 的 audios_list）
         """
         query = f"album_id={album_id}"
         return await self._fetch(config.FANJIAO_AUDIO_BASE_URL, query)
