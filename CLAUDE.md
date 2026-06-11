@@ -36,19 +36,19 @@ docker compose up -d
 The app uses a layered architecture with one-way dependencies flowing upward:
 
 ```
-Utils → Clients → Services → Core (Processor) → API (Routes)
+Utils → Clients → Services → API (Routes)
 ```
 
 **Two processing pipelines exist in parallel:**
-- **Album pipeline**: `AlbumProcessor` → `FanjiaoService` + `NotionService` — handles radio drama albums
-- **Audio pipeline**: `AudioProcessor` → `FanjiaoAudioService` + `NotionService` — handles individual audio tracks/songs
+- **Album pipeline**: `FanjiaoService` + `NotionService` — handles radio drama albums
+- **Audio pipeline**: `FanjiaoAudioService` + `NotionService` — handles individual audio tracks/songs
 
 **Key flow for album processing:**
 1. Notion button sends a POST webhook to `/webhook-album`
 2. `routes.py` extracts `FanjiaoAlbumID` (number field) from the Notion page properties
-3. `AlbumProcessor.process_id()` calls `FanjiaoService.fetch_album_data()`
-4. `FanjiaoService` uses `FanjiaoAlbumClient` and `FanjiaoCVClient` to fetch data, then `description_parser.py` to extract tags/up主/episode counts from the description text
-5. `NotionService.upload_album_data()` writes properties back to the Notion page via `NotionClient`
+3. `routes.py` calls `FanjiaoService.fetch_album_data()` to fetch and extract album data
+4. `FanjiaoService` uses `FanjiaoAlbumClient` and `FanjiaoCVClient` to fetch data, then `description_album_parser.py` to extract tags/up主/episode counts from the description text
+5. `routes.py` calls `NotionService.upload_album_data()` which builds properties via `notion_builder.py` and writes them to the Notion page via `NotionClient`
 
 ## Webhook Endpoints
 
@@ -78,6 +78,5 @@ Config is a singleton at `app/utils/config.py:config`.
 
 - **Notion field names** are defined as `StrEnum` constants in `app/constants/notion_fields.py` (`AlbumField`, `AudioField`). Always use these enums instead of hardcoded strings when referencing Notion properties.
 - `app/utils/cache.py` provides local file caching under `app/data_cache/` (mounted as a Docker volume).
-- `cli.py` at the project root reads album URLs from `waiting_up_private.txt` (gitignored) for local batch processing.
 - Scripts in `scripts/` (`inspect_data_source.py`, `inspect_page.py`) are standalone debugging utilities.
 - `notion_button/simulate_button_click.py` can simulate a Notion button click locally for testing.
