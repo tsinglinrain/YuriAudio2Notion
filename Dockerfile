@@ -1,4 +1,4 @@
-FROM python:3.14.5-alpine AS builder
+FROM python:3.14.6-alpine AS builder
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ COPY pyproject.toml uv.lock ./
 
 RUN uv sync --frozen --no-dev --no-install-project
 
-FROM python:3.14.5-alpine
+FROM python:3.14.6-alpine
 WORKDIR /app
 
 RUN apk add --no-cache curl
