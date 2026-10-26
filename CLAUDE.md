@@ -47,8 +47,8 @@ Utils → Clients → Services → API (Routes)
 1. Notion button sends a POST webhook to `/webhook-album`
 2. `routes.py` extracts `FanjiaoAlbumID` (number field) from the Notion page properties
 3. `routes.py` calls `FanjiaoService.fetch_album_data()` to fetch and extract album data
-4. `FanjiaoService` uses `FanjiaoAlbumClient` and `FanjiaoCVClient` to fetch data, then `description_album_parser.py` to extract tags/up主/episode counts from the description text
-5. `routes.py` calls `NotionService.upload_album_data()` which builds properties via `notion_builder.py` and writes them to the Notion page via `NotionClient`
+4. `FanjiaoService` uses `FanjiaoAlbumClient` and `FanjiaoCVClient` to fetch the album data
+5. `routes.py` calls `NotionService.upload_album_data()`, which parses the description with `description_album_parser.py` (tags, up主, episode counts), builds properties via `notion_builder.py`, and writes them to the Notion page via `NotionClient`
 
 ## Webhook Endpoints
 
